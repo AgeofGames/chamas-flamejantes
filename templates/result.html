@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Resultado • {{ tournament.name }}{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <span class="eyebrow">{{ tournament.short_name }} • RESULTADO</span>
+  <h1>{% if winners %}A guerra terminou.{% else %}Resultado ainda não publicado.{% endif %}</h1>
+  <p>Premiação: <strong>{{ prize_label(tournament) }}</strong></p>
+</section>
+<section class="section narrow-wide">
+  {% if winners %}
+  <div class="winner-grid">
+    {% for w in winners %}
+    {% set e=w.entry %}
+    <article class="winner large winner-neon">
+      {% if e.player_id and avatar_src(e) %}<img class="winner-avatar large neon-avatar" src="{{ avatar_src(e) }}">{% else %}<span class="winner-fire">🏆</span>{% endif %}
+      <small>{{ w.label|upper }}</small>
+      <h2 class="winner-name-neon">{{ e.display_name }}</h2>
+      {% if e.quote %}<blockquote class="player-quote winner-quote">“{{e.quote}}”</blockquote>{% endif %}
+      <strong>{{ prize_label(tournament) }}</strong>
+      {% if e.team_id %}
+        <div class="winner-members">
+        {% for m in e.members %}
+          <span class="winner-member-neon">
+            {{ m.role }} • {{ m.nickname }}
+            {% if m.aomstats_url %}<a class="neon-profile" target="_blank" href="{{ m.aomstats_url }}">AoMStats ↗</a>{% endif %}
+          </span>
+        {% endfor %}
+        </div>
+        {% if w.prize_share>0 %}<small>{{ tournament.currency }} {{ '%.2f'|format(w.prize_share/(e.members|length))|replace('.',',') }} por jogador, se dividido igualmente.</small>{% endif %}
+      {% elif e.aomstats_url %}
+        <a class="neon-profile" target="_blank" href="{{ e.aomstats_url }}">VER PERFIL AOMSTATS ↗</a>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty"><h3>Nenhum campeão definido</h3><p>Quando o torneio for finalizado, o resultado será exibido aqui.</p></div>
+  {% endif %}
+</section>
+{% if tournament.format_type!='ffa' %}<section class="section result-history-link"><div class="note center-text">O histórico deste torneio permanece salvo. <a class="text-link" href="{{url_for('tournament_matches',slug=tournament.slug)}}">Ver quem enfrentou quem e todos os placares →</a></div></section>{% endif %}
+{% if tournament.format_type=='round_robin' and standings %}<section class="section"><div class="section-head"><div><span class="eyebrow">CLASSIFICAÇÃO FINAL</span><h3>Todos contra todos</h3></div></div>{% include '_standings.html' %}</section>{% endif %}
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Admin • {{ tournament.name }}{% endblock %}
+{% block content %}
+<section class="admin-head"><div><span class="eyebrow">GERENCIAR TORNEIO {% if tournament.best_of==3 %}• MELHOR DE 3{% endif %}</span><h1>{{ tournament.name }}</h1><p>{{ tournament.description }}</p></div><div class="admin-actions"><a class="btn secondary" href="{{ url_for('admin') }}">← CENTRAL</a><a class="btn secondary" href="{{ url_for('admin_export', tournament_id=tournament.id) }}">CSV</a><a class="btn ghost" target="_blank" href="{{ url_for('tournament_page', slug=tournament.slug) }}">VER PÚBLICO ↗</a></div></section>
+
+<section class="section admin-section"><div class="stat-grid four-stats"><div class="stat"><small>Inscritos</small><strong>{{ entries|selectattr('status','in',['inscrito','confirmado'])|list|length }}/{{ tournament.max_entries }}</strong></div><div class="stat"><small>Formato</small><strong>{% if tournament.best_of==3 %}MD3{% elif tournament.format_type=='elimination' %}Mata-mata{% elif tournament.format_type=='round_robin' %}Liga{% else %}FFA{% endif %}</strong></div><div class="stat"><small>Entrada</small><strong>{% if tournament.team_size>1 %}{{tournament.team_size}}x{{tournament.team_size}}{% else %}1x1{% endif %}</strong></div><div class="stat"><small>Status</small><strong>{{ tournament.status }}</strong></div></div></section>
+
+<section class="section admin-section"><details class="admin-block" open><summary><span>⚙️</span> Configurações deste torneio</summary><form method="post" action="{{ url_for('admin_tournament_settings', tournament_id=tournament.id) }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Nome</span><input name="name" value="{{ tournament.name }}"></label><label><span>Nome curto</span><input name="short_name" value="{{ tournament.short_name }}"></label><label><span>Prêmio em dinheiro (opcional)</span><input name="prize_total" type="number" step="0.01" min="0" value="{{ tournament.prize_total }}"></label><label><span>Moeda</span><input name="currency" value="{{ tournament.currency }}"></label><label><span>Nome do prêmio / objeto</span><input name="prize_name" value="{{ tournament.prize_name }}" placeholder="Ex.: Troféu + camisa oficial"></label><label><span>Limite (máximo: {{ hard_limit }})</span><input name="max_entries" type="number" min="2" max="{{ hard_limit }}" value="{{ tournament.max_entries }}"></label><label><span>Status</span><select name="status">{% for v in ['inscricoes','andamento','finalizado'] %}<option {% if tournament.status==v %}selected{% endif %}>{{v}}</option>{% endfor %}</select></label><label><span>Data</span><input type="date" name="event_date" value="{{ tournament.event_date }}"></label><label><span>Horário</span><input type="time" name="event_time" value="{{ tournament.event_time }}"></label><label><span>Mapa</span><input name="map_name" value="{{ tournament.map_name }}"></label><label><span>Lobby</span><input name="lobby_name" value="{{ tournament.lobby_name }}"></label><label><span>Senha</span><input name="lobby_password" value="{{ tournament.lobby_password }}"></label><label class="check"><input type="checkbox" name="registration_open" {% if tournament.registration_open %}checked{% endif %}><span>Inscrições abertas</span></label><label class="check"><input type="checkbox" name="is_public" {% if tournament.is_public %}checked{% endif %}><span>Exibir publicamente</span></label><label class="check"><input type="checkbox" name="show_lobby_credentials" {% if tournament.show_lobby_credentials %}checked{% endif %}><span>Mostrar lobby publicamente</span></label><label class="full"><span>Descrição</span><textarea name="description">{{ tournament.description }}</textarea></label><label class="full"><span>Observações</span><textarea name="notes">{{ tournament.notes }}</textarea></label></div><button class="btn primary">SALVAR TORNEIO</button></form></details></section>
+
+<section class="section admin-section">
+<details class="admin-block" open>
+  <summary>
+    <span>＋</span>
+    Adicionar {{ 'equipe' if tournament.team_size>1 else 'jogador' }} pelo AoMStats
+  </summary>
+
+  <form method="post"
+        action="{{ url_for('admin_entry_new', tournament_id=tournament.id) }}"
+        class="admin-form tournament-aom-entry-form"
+        enctype="multipart/form-data"
+        data-elo-mode="{{ tournament.elo_mode }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    {% if tournament.team_size == 1 %}
+      <p class="section-copy">
+        Cole o perfil do AoMStats. O sistema busca automaticamente
+        <b>Nick, Elo {{ 'Sup Team' if tournament.elo_mode=='team' else 'Sup 1v1' }}
+        e foto Steam/AoMStats</b>.
+      </p>
+
+      <div class="lookup-player-box tournament-player-lookup">
+        <div class="community-lookup-title">
+          <div>
+            <span class="eyebrow">JOGADOR • AOMSTATS</span>
+            <h4>Buscar jogador automaticamente</h4>
+            <p>O perfil AoMStats é obrigatório para adicionar pelo painel.</p>
+          </div>
+
+          <div class="community-profile-preview">
+            <div class="community-preview-avatar-wrap">
+              <span class="community-preview-placeholder">🔥</span>
+              <img class="aom-avatar-preview" alt="Foto do jogador" hidden>
+            </div>
+            <div class="community-preview-data">
+              <strong class="aom-preview-name">Aguardando perfil</strong>
+              <small class="aom-preview-elo">
+                Elo {{ 'Sup Team' if tournament.elo_mode=='team' else 'Sup 1v1' }}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <label class="full">
+          <span>Perfil AoMStats *</span>
+          <div class="inline">
+            <input class="aom-url" name="aomstats_url" required
+                   placeholder="https://aomstats.io/profile/1076869557">
+            <button type="button" class="btn secondary lookup-aom">BUSCAR DADOS</button>
+          </div>
+        </label>
+
+        <div class="lookup-status"></div>
+
+        <div class="admin-grid">
+          <label>
+            <span>Nick — automático</span>
+            <input class="aom-nick" name="nickname" placeholder="Preenchido pelo AoMStats">
+          </label>
+
+          <label>
+            <span>Elo — automático</span>
+            <input class="aom-elo" name="elo" type="number" min="0" max="5000"
+                   placeholder="SEM ELO se não existir">
+          </label>
+
+          <label>
+            <span>Discord (opcional)</span>
+            <input name="discord">
+          </label>
+
+          <label class="full">
+            <span>Foto manual do PC (opcional)</span>
+            <input class="manual-avatar-input" type="file" name="avatar" accept="image/png,image/jpeg,image/webp">
+            <small>Se o AoMStats não tiver foto, escolha uma imagem do seu computador.</small>
+          </label>
+          <label class="full">
+            <span>Frase do jogador (opcional)</span>
+            <input name="quote" maxlength="220" placeholder="Ex.: Os deuses favorecem os ousados.">
+          </label>
+
+          <label>
+            <span>Status</span>
+            <select name="status">
+              {% for v in ['inscrito','confirmado','reserva','removido'] %}
+                <option>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </div>
+
+    {% else %}
+      <p class="section-copy">
+        Cadastre a equipe normalmente, mas agora <b>cada integrante precisa do próprio perfil AoMStats</b>.
+        O site busca Nick, Elo e foto de todos automaticamente.
+      </p>
+
+      <div class="admin-grid team-main-fields">
+        <label>
+          <span>Nome da equipe *</span>
+          <input name="team_name" required placeholder="Ex.: Chamas do Olimpo">
+        </label>
+
+        <label>
+          <span>Discord do capitão</span>
+          <input name="captain_discord">
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select name="status">
+            {% for v in ['inscrito','confirmado','reserva','removido'] %}
+              <option>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="team-aom-members">
+      {% for i in range(1, tournament.team_size + 1) %}
+        <div class="lookup-player-box tournament-member-lookup">
+          <div class="community-lookup-title">
+            <div>
+              <span class="eyebrow">
+                {% if tournament.mode_key=='food_wood_gold' %}
+                  {{ ['🥩 FOOD','🪵 WOOD','🪙 GOLD'][i-1] }}
+                {% else %}
+                  JOGADOR {{ i }}
+                {% endif %}
+              </span>
+              <h4>
+                {% if tournament.mode_key=='food_wood_gold' %}
+                  {{ ['FOOD','WOOD','GOLD'][i-1] }}
+                {% else %}
+                  Integrante {{ i }}
+                {% endif %}
+              </h4>
+              <p>Cole o perfil individual deste jogador.</p>
+            </div>
+
+            <div class="community-profile-preview">
+              <div class="community-preview-avatar-wrap">
+                <span class="community-preview-placeholder">🔥</span>
+                <img class="aom-avatar-preview" alt="Foto do jogador {{i}}" hidden>
+              </div>
+              <div class="community-preview-data">
+                <strong class="aom-preview-name">Aguardando perfil</strong>
+                <small class="aom-preview-elo">
+                  Elo {{ 'Sup Team' if tournament.elo_mode=='team' else 'Sup 1v1' }}
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <label class="full">
+            <span>Perfil AoMStats do jogador {{ i }} *</span>
+            <div class="inline">
+              <input class="aom-url"
+                     name="member_{{i}}_aomstats"
+                     required
+                     placeholder="https://aomstats.io/profile/ID">
+              <button type="button" class="btn secondary lookup-aom">BUSCAR DADOS</button>
+            </div>
+          </label>
+
+          <div class="lookup-status"></div>
+
+          <div class="two-col">
+            <label>
+              <span>Nick — automático</span>
+              <input class="aom-nick"
+                     name="member_{{i}}_nickname"
+                     placeholder="Preenchido automaticamente">
+            </label>
+
+            <label>
+              <span>Elo — automático</span>
+              <input class="aom-elo"
+                     name="member_{{i}}_elo"
+                     type="number"
+                     min="0"
+                     max="5000"
+                     placeholder="SEM ELO se não existir">
+            </label>
+          </div>
+          <label class="full">
+            <span>Foto manual do jogador {{ i }} (opcional)</span>
+            <input class="manual-avatar-input" type="file" name="member_{{i}}_avatar" accept="image/png,image/jpeg,image/webp">
+            <small>Escolha uma imagem do PC caso esse jogador não tenha avatar no AoMStats.</small>
+          </label>
+          <label class="full">
+            <span>Frase do jogador {{ i }} (opcional)</span>
+            <input name="member_{{i}}_quote" maxlength="220" placeholder="Ex.: Até os deuses podem cair.">
+          </label>
+        </div>
+      {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="community-auto-info tournament-auto-info">
+      <b>✓ Os dados são consultados novamente ao salvar.</b>
+      <span>
+        Mesmo se você não clicar em BUSCAR DADOS, o servidor tentará puxar
+        Nick, Elo e foto pelo AoMStats antes de cadastrar.
+      </span>
+    </div>
+
+    <button class="btn primary big">
+      {{ 'CADASTRAR EQUIPE' if tournament.team_size>1 else 'CADASTRAR JOGADOR' }}
+    </button>
+  </form>
+</details>
+</section>
+
+<section class="section admin-section"><div class="section-head"><div><span class="eyebrow">INSCRIÇÕES</span><h3>{{ 'Equipes' if tournament.team_size>1 else 'Jogadores' }}</h3></div></div>{% if entries %}<div class="admin-entries">{% for e in entries %}<details class="participant-editor"><summary><span class="seed">#{{ e.registration_order }}</span><strong>{{ e.display_name }}</strong><span class="status">{{ e.status }}</span><span>{{ 'Equipe de '~tournament.team_size if e.team_id else 'Elo '~(elo_label(e,tournament)) }}</span></summary><div class="editor-body">{% if e.team_id %}<form method="post" action="{{ url_for('admin_team_edit',team_id=e.team_id) }}" class="admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><div class="admin-grid"><label><span>Nome da equipe</span><input name="team_name" value="{{e.team_name}}"></label><label><span>Discord capitão</span><input name="captain_discord" value="{{e.captain_discord}}"></label></div><button class="btn secondary">SALVAR EQUIPE</button></form><div class="team-admin-members">{% for m in e.members %}<details><summary>{% if avatar_src(m) %}<img class="admin-avatar" src="{{avatar_src(m)}}">{% else %}<span class="admin-avatar fallback">🔥</span>{% endif %}<b>{{m.role}} • {{m.nickname}}</b><span>Elo {{elo_label(m,tournament)}}</span></summary><form method="post" enctype="multipart/form-data" action="{{url_for('admin_player_edit',player_id=m.id)}}" class="admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="tournament_id" value="{{tournament.id}}"><div class="admin-grid"><label><span>Nick</span><input name="nickname" value="{{m.nickname}}"></label><label><span>Elo</span><input name="elo" type="number" value="{{display_elo(m,tournament) or 0}}"></label><label><span>Discord</span><input name="discord" value="{{m.discord}}"></label><label class="full"><span>URL foto Steam</span><input name="avatar_url_direct" value="{{m.avatar_url}}"></label><label class="full"><span>Frase</span><input name="quote" maxlength="220" value="{{m.quote}}" placeholder="Frase do jogador"></label><label class="full"><span>Frase</span><input name="quote" maxlength="220" value="{{e.quote}}" placeholder="Frase do jogador"></label><label class="full"><span>Carregar foto</span><input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"></label><label class="check"><input type="checkbox" name="remove_avatar"><span>Remover foto</span></label></div><button class="btn secondary">SALVAR JOGADOR</button></form>{% if m.aomstats_url %}<form method="post" action="{{url_for('admin_player_refresh',player_id=m.id)}}" class="inline-admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="tournament_id" value="{{tournament.id}}"><button class="btn ghost">ATUALIZAR AOMSTATS</button></form>{% endif %}</details>{% endfor %}</div>{% else %}<form method="post" enctype="multipart/form-data" action="{{url_for('admin_player_edit',player_id=e.player_id)}}" class="admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="tournament_id" value="{{tournament.id}}"><div class="admin-grid"><label><span>Nick</span><input name="nickname" value="{{e.nickname}}"></label><label><span>Elo</span><input name="elo" type="number" value="{{display_elo(e,tournament) or 0}}"></label><label><span>Discord</span><input name="discord" value="{{e.discord}}"></label><label class="full"><span>URL foto Steam</span><input name="avatar_url_direct" value="{{e.avatar_url}}"></label><label class="full"><span>Carregar foto</span><input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"></label><label class="check"><input type="checkbox" name="remove_avatar"><span>Remover foto</span></label></div><button class="btn secondary">SALVAR JOGADOR</button></form>{% if e.aomstats_url %}<form method="post" action="{{url_for('admin_player_refresh',player_id=e.player_id)}}" class="inline-admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="tournament_id" value="{{tournament.id}}"><button class="btn ghost">ATUALIZAR AOMSTATS</button></form>{% endif %}{% endif %}<div class="entry-footer-actions"><form method="post" action="{{url_for('admin_entry_status',entry_id=e.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><select name="status">{% for v in ['inscrito','confirmado','reserva','removido'] %}<option {% if e.status==v %}selected{% endif %}>{{v}}</option>{% endfor %}</select><button class="btn ghost">ATUALIZAR STATUS</button></form><form method="post" action="{{url_for('admin_entry_delete',entry_id=e.id)}}" onsubmit="return confirm('Excluir esta inscrição?')"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">EXCLUIR</button></form></div></div></details>{% endfor %}</div>{% else %}<div class="empty">Ainda não há inscritos.</div>{% endif %}</section>
+
+{% if tournament.format_type!='ffa' %}<section class="section admin-section"><div class="admin-block result-block"><h3>⚔️ Sistema de confrontos {% if tournament.best_of==3 %}• MELHOR DE 3{% endif %}</h3><p>{% if tournament.best_of==3 %}Cada confronto é uma série MD3: o primeiro a fazer 2 vitórias avança. Registre 2x0 ou 2x1; o vencedor é calculado automaticamente.{% elif tournament.format_type=='elimination' %}Gere a chave mata-mata. Ao registrar um vencedor, o sistema avança automaticamente.{% else %}Gere a tabela completa: todos enfrentarão todos uma vez.{% endif %}</p><div class="row-actions no-pad"><form method="post" action="{{url_for('admin_generate_matches',tournament_id=tournament.id)}}" onsubmit="return confirm('Gerar confrontos? Isso substitui confrontos existentes.')"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary">GERAR CONFRONTOS</button></form><form method="post" action="{{url_for('admin_reset_matches',tournament_id=tournament.id)}}" onsubmit="return confirm('Zerar todos os confrontos e reabrir inscrições?')"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger-outline">ZERAR CONFRONTOS</button></form></div></div></section>{% endif %}
+
+{% if tournament.format_type=='round_robin' and standings %}<section class="section admin-section"><div class="section-head"><div><span class="eyebrow">CLASSIFICAÇÃO</span><h3>Todos contra todos</h3></div></div>{% include '_standings.html' %}</section>{% endif %}
+
+{% if groups %}<section class="section admin-section"><div class="section-head"><div><span class="eyebrow">RESULTADOS</span><h3>{% if tournament.best_of==3 %}Séries MD3{% else %}Confrontos{% endif %}</h3></div></div><div class="admin-rounds">{% for round_no,matches in groups.items() %}<div class="round-block"><div class="round-title"><span>RODADA {{round_no}}</span>{% if tournament.format_type=='elimination' and matches|length==1 %}<b>FINAL</b>{% endif %}</div><div class="match-grid admin-matches">{% for m in matches %}<article class="match-card {% if m.status in ['finalizado','bye'] %}done{% endif %}"><div class="match-number">{% if tournament.best_of==3 %}SÉRIE{% else %}JOGO{% endif %} {{m.match_no}}</div><div class="match-side {% if m.winner_entry_id==m.entry_a_id %}winner-side{% endif %}"><span>{{entry_map[m.entry_a_id].display_name if m.entry_a_id and entry_map.get(m.entry_a_id) else '—'}}</span><b>{{m.score_a}}</b></div><div class="versus">VS</div><div class="match-side {% if m.winner_entry_id==m.entry_b_id %}winner-side{% endif %}"><span>{{entry_map[m.entry_b_id].display_name if m.entry_b_id and entry_map.get(m.entry_b_id) else ('BYE' if m.status=='bye' else '—')}}</span><b>{{m.score_b}}</b></div>{% if m.status=='bye' %}<div class="match-status">BYE • avança automaticamente</div>{% else %}<form method="post" action="{{url_for('admin_match_result',match_id=m.id)}}" class="match-result-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><div class="score-pair"><input name="score_a" type="number" min="0" {% if tournament.best_of==3 %}max="2"{% endif %} value="{{m.score_a}}"><span>x</span><input name="score_b" type="number" min="0" {% if tournament.best_of==3 %}max="2"{% endif %} value="{{m.score_b}}"></div>{% if tournament.best_of!=3 %}<select name="winner_entry_id" required><option value="">Vencedor...</option><option value="{{m.entry_a_id}}" {% if m.winner_entry_id==m.entry_a_id %}selected{% endif %}>{{entry_map[m.entry_a_id].display_name}}</option><option value="{{m.entry_b_id}}" {% if m.winner_entry_id==m.entry_b_id %}selected{% endif %}>{{entry_map[m.entry_b_id].display_name}}</option></select>{% else %}<small class="md3-hint">MD3: use 2x0 ou 2x1. O sistema identifica o vencedor.</small>{% endif %}<button class="btn secondary">SALVAR RESULTADO</button></form>{% endif %}</article>{% endfor %}</div></div>{% endfor %}</div></section>{% endif %}
+
+{% if tournament.format_type in ['ffa','round_robin'] %}<section class="section admin-section"><div class="admin-block result-block"><h3>🏆 Publicar vencedor(es)</h3><p>{% if tournament.format_type=='ffa' %}O FFA permite um ou vários vencedores; a premiação é dividida igualmente.{% else %}A liga define automaticamente um líder isolado quando todos os jogos terminam. Em caso de empate, você pode definir aqui.{% endif %}</p><form method="post" action="{{url_for('admin_select_winners',tournament_id=tournament.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><div class="winner-select">{% for e in entries if e.status in ['inscrito','confirmado'] %}<label><input type="checkbox" name="winner_ids" value="{{e.id}}" {% if e.id in winner_ids %}checked{% endif %}><span><b>{{e.display_name}}</b><small>#{{e.registration_order}}</small></span></label>{% endfor %}</div><button class="btn primary">PUBLICAR RESULTADO</button><button class="btn ghost" type="submit" onclick="document.querySelectorAll('[name=winner_ids]').forEach(x=>x.checked=false)">REMOVER VENCEDORES</button></form></div></section>{% endif %}
+
+<section class="section admin-section danger-zone"><details class="admin-block"><summary><span>⚠️</span> Zona de perigo</summary><div class="admin-form"><p>Excluir este torneio remove inscrições, equipes, confrontos e resultados deste torneio. Os jogadores globais continuam no banco.</p><form method="post" action="{{url_for('admin_delete_tournament',tournament_id=tournament.id)}}" onsubmit="return confirm('EXCLUIR DEFINITIVAMENTE o torneio {{tournament.name}}?')"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">EXCLUIR TORNEIO</button></form></div></details></section>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ tournament.name }} • {{ site.title }}{% endblock %}
+{% block content %}
+<section class="tournament-hero">
+  <div class="tournament-hero-inner">
+    <span class="eyebrow">{% if tournament.best_of==3 %}MELHOR DE 3 • {% endif %}{{ 'ELIMINAÇÃO DIRETA' if tournament.format_type=='elimination' else ('TODOS CONTRA TODOS' if tournament.format_type=='round_robin' else 'FREE FOR ALL • SEM REGRAS') }}</span>
+    <h1>{{ tournament.name }}</h1>
+    <p>{{ tournament.description }}</p>
+    <div class="hero-stats">
+      <div><strong>{{ filled }}/{{ tournament.max_entries }}</strong><span>{{ 'equipes' if tournament.team_size > 1 else 'jogadores' }}</span></div>
+      <div><strong>{{ prize_label(tournament) }}</strong><span>premiação</span></div>
+      <div><strong>{% if tournament.best_of==3 %}MD3 • PRIMEIRO A 2{% elif tournament.team_size > 1 %}EQUIPE DE {{ tournament.team_size }}{% else %}INDIVIDUAL{% endif %}</strong><span>formato</span></div>
+    </div>
+    <div class="tourney-actions">
+      {% if tournament.registration_open and spots_left > 0 %}<a class="btn primary big" href="{{ url_for('tournament_register', slug=tournament.slug) }}">GARANTIR VAGA</a>{% endif %}
+      <a class="btn secondary big" href="{{ url_for('tournament_participants', slug=tournament.slug) }}">PARTICIPANTES</a>
+      {% if tournament.format_type != 'ffa' %}<a class="btn secondary big" href="{{ url_for('tournament_matches', slug=tournament.slug) }}">CONFRONTOS</a>{% endif %}
+      <a class="btn secondary big" href="{{ url_for('tournament_result', slug=tournament.slug) }}">RESULTADO</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="info-grid">
+    <div class="info-card"><small>Data</small><strong>{{ tournament.event_date or 'A definir' }}</strong></div>
+    <div class="info-card"><small>Horário</small><strong>{{ tournament.event_time or 'A definir' }}</strong></div>
+    <div class="info-card"><small>Mapa</small><strong>{{ tournament.map_name or 'A definir' }}</strong></div>
+    <div class="info-card"><small>Status</small><strong>{{ tournament.status|upper }}</strong></div>
+    {% if tournament.show_lobby_credentials %}<div class="info-card"><small>Lobby</small><strong>{{ tournament.lobby_name or 'A definir' }}</strong></div><div class="info-card"><small>Senha</small><strong>{{ tournament.lobby_password or '—' }}</strong></div>{% endif %}
+  </div>
+  {% if tournament.notes %}<div class="note">{{ tournament.notes }}</div>{% endif %}
+</section>
+{% if winners %}
+<section class="section champion-strip"><div class="champion-banner winner-neon"><span>🏆</span><div><small>CAMPEÃO{% if winners|length>1 %}ES{% endif %}</small><h3>{% for w in winners %}{% if w.entry.aomstats_url %}<a class="winner-name-neon" target="_blank" href="{{w.entry.aomstats_url}}">{{w.entry.display_name}}</a>{% else %}<span class="winner-name-neon">{{w.entry.display_name}}</span>{% endif %}{% if not loop.last %} • {% endif %}{% endfor %}</h3><b>{{ prize_label(tournament) }}</b></div><a class="btn primary" href="{{url_for('tournament_result',slug=tournament.slug)}}">VER RESULTADO</a></div></section>
+{% endif %}
+
+{% if tournament.mode_key == 'food_wood_gold' %}
+<section class="section role-section">
+  <div class="section-head"><div><span class="eyebrow">FORMAÇÃO DA EQUIPE</span><h3>Food • Wood • Gold</h3></div></div>
+  <div class="role-grid"><div><b>🥩 FOOD</b><p>Jogador responsável pela função FOOD da equipe.</p></div><div><b>🪵 WOOD</b><p>Jogador responsável pela função WOOD da equipe.</p></div><div><b>🪙 GOLD</b><p>Jogador responsável pela função GOLD da equipe.</p></div></div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">INSCRITOS</span><h3>{{ 'Equipes' if tournament.team_size > 1 else 'Jogadores' }}</h3></div><a class="text-link" href="{{ url_for('tournament_participants', slug=tournament.slug) }}">Ver todos →</a></div>
+  {% if entries %}
+    <div class="entry-grid">
+    {% for e in entries[:8] %}
+      {% if e.team_id %}
+      <article class="team-card"><div class="team-card-head"><span class="seed">#{{ e.registration_order }}</span><h4>{{ e.display_name }}</h4><span class="status">{{ e.status }}</span></div><div class="team-members-mini">{% for m in e.members %}<div>{% if avatar_src(m) %}<img class="avatar-img small" src="{{ avatar_src(m) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}<span><b>{{ m.nickname }}</b><small>{{ m.role }} • Elo {{ elo_label(m,tournament) }}</small>{% if m.quote %}<em class="player-quote mini">“{{m.quote}}”</em>{% endif %}</span></div>{% endfor %}</div></article>
+      {% else %}
+      <article class="player-card"><span class="seed">#{{ e.registration_order }}</span>{% if avatar_src(e) %}<img class="avatar-img" src="{{ avatar_src(e) }}">{% else %}<span class="avatar avatar-fire">🔥</span>{% endif %}<div class="player-main"><h4>{{ e.nickname }}</h4>{% if e.quote %}<span class="player-quote mini">“{{e.quote}}”</span>{% endif %}<span class="status">{{ e.status }}</span></div><div class="elo"><small>ELO</small><strong>{{ elo_label(e,tournament) }}</strong></div>{% if e.aomstats_url %}<a class="mini-link" href="{{ e.aomstats_url }}" target="_blank">AoMStats ↗</a>{% endif %}</article>
+      {% endif %}
+    {% endfor %}
+    </div>
+  {% else %}<div class="empty">Nenhuma inscrição ainda. Seja o primeiro a entrar nessa modalidade.</div>{% endif %}
+</section>
+
+{% if tournament.format_type == 'round_robin' and standings %}
+<section class="section"><div class="section-head"><div><span class="eyebrow">CLASSIFICAÇÃO</span><h3>Todos contra todos</h3></div></div>{% include '_standings.html' %}</section>
+{% endif %}
+{% endblock %}

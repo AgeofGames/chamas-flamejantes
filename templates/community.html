@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Elo da Comunidade • {{ site.title }}{% endblock %}
+{% block content %}
+<section class="page-hero compact community-page-hero">
+  <span class="eyebrow">⚡ RANKING OFICIAL</span>
+  <h1>Elo da Comunidade</h1>
+  <p>Quem possui Elo ranqueado fica sempre acima de quem está <b>SEM ELO</b>. Entre os SEM ELO, o nível é calculado pelas vitórias e derrotas de Customs/Quickplay registradas no AoMStats.</p>
+</section>
+
+{% if ranking %}
+<section class="section">
+  <div class="community-highlight-grid">
+    <article class="community-highlight best">
+      <small>👑 MELHOR DA COMUNIDADE</small>
+      {% if avatar_src(best) %}<img src="{{ avatar_src(best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      <h2>{{ best.nickname }}</h2>
+      {% if best.has_elo %}
+        <strong>{{ best.community_elo }} ELO</strong>
+      {% else %}
+        <strong class="no-elo-badge big">SEM ELO</strong>
+        <span class="level-line">{{ community_level_text(best) }}</span>
+      {% endif %}
+      <span class="normal-record">{{ best.normal_wins }} vitórias • {{ best.normal_losses }} derrotas em partidas normais</span>
+      {% if best.quote %}<blockquote class="player-quote community-quote">“{{ best.quote }}”</blockquote>{% endif %}
+      {% if best.aomstats_url %}<a class="neon-profile" target="_blank" href="{{best.aomstats_url}}">PERFIL AOMSTATS ↗</a>{% endif %}
+    </article>
+
+    {% if worst and ranking|length > 1 %}
+    <article class="community-highlight worst">
+      <small>💀 PIOR FRACASSADO</small>
+      {% if avatar_src(worst) %}<img src="{{ avatar_src(worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      <h2>{{ worst.nickname }}</h2>
+      {% if worst.has_elo %}
+        <strong>{{ worst.community_elo }} ELO</strong>
+      {% else %}
+        <strong class="no-elo-badge big">SEM ELO</strong>
+        <span class="level-line">{{ community_level_text(worst) }}</span>
+      {% endif %}
+      <span class="normal-record">{{ worst.normal_wins }} vitórias • {{ worst.normal_losses }} derrotas em partidas normais</span>
+      {% if worst.quote %}<blockquote class="player-quote community-quote">“{{ worst.quote }}”</blockquote>{% endif %}
+      {% if worst.aomstats_url %}<a class="neon-profile danger-neon" target="_blank" href="{{worst.aomstats_url}}">PERFIL AOMSTATS ↗</a>{% endif %}
+    </article>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">CLASSIFICAÇÃO</span>
+      <h3>Do melhor ao pior</h3>
+      <p class="section-copy">Prioridade: 1º jogadores com Elo; 2º maior Elo; depois jogadores SEM ELO pelo nível de partidas normais.</p>
+    </div>
+  </div>
+
+  <div class="community-table-wrap">
+  <table class="players-table community-table">
+    <thead>
+      <tr><th>#</th><th>Jogador</th><th>Frase</th><th>Elo</th><th>Normais</th><th>Nível</th><th>Título</th><th>Perfil</th></tr>
+    </thead>
+    <tbody>
+    {% for c in ranking %}
+    <tr class="{% if loop.first %}community-row-best{% elif loop.last and ranking|length>1 %}community-row-worst{% endif %}">
+      <td class="rank">#{{loop.index}}</td>
+      <td><div class="name-cell">{% if avatar_src(c) %}<img class="avatar-img small" src="{{avatar_src(c)}}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}<strong>{{c.nickname}}</strong></div></td>
+      <td class="quote-cell">{% if c.quote %}“{{c.quote}}”{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if c.has_elo %}<strong>{{c.community_elo}}</strong>{% else %}<span class="no-elo-badge">SEM ELO</span>{% endif %}</td>
+      <td><span class="record-wins">{{c.normal_wins}}V</span> • <span class="record-losses">{{c.normal_losses}}D</span><small class="table-sub">{% if c.normal_stats_available %}{{'%.1f'|format(c.normal_win_rate)}}%{% else %}dados indisponíveis{% endif %}</small></td>
+      <td><strong>Nv. {{c.normal_level}}</strong><small class="table-sub">{{c.normal_level_label}}</small></td>
+      <td>{% if loop.first %}<span class="community-title best-title">👑 Melhor da Comunidade</span>{% elif loop.last and ranking|length>1 %}<span class="community-title worst-title">💀 Pior Fracassado</span>{% else %}<span class="status">Competidor</span>{% endif %}</td>
+      <td>{% if c.aomstats_url %}<a class="mini-link {% if loop.first or (loop.last and ranking|length>1) %}neon-profile{% endif %}" target="_blank" href="{{c.aomstats_url}}">AoMStats ↗</a>{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div class="normal-data-note">
+    <b>Como o nível SEM ELO é calculado?</b>
+    <span>Nível de 1 a 100 usando quantidade de vitórias e taxa de vitória em Customs/Quickplay. Jogadores com Elo ranqueado sempre ficam acima dos SEM ELO.</span>
+    <small>Observação: o próprio AoMStats informa que dados não ranqueados anteriores a 8 de março de 2025 podem ser incompletos.</small>
+  </div>
+</section>
+{% else %}
+<section class="section"><div class="empty"><h3>Ranking ainda vazio</h3><p>O administrador ainda não cadastrou os participantes da comunidade.</p></div></section>
+{% endif %}
+{% endblock %}

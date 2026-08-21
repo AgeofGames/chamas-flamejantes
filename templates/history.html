@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Histórico • {{ site.title }}{% endblock %}
+{% block content %}
+<section class="page-hero compact"><span class="eyebrow">🏛️ HALL DAS LENDAS</span><h1>Histórico de torneios</h1><p>Todos os torneios finalizados ficam arquivados com campeão, participantes, placares e quem enfrentou quem.</p></section>
+<section class="section">
+  {% if tournaments %}<div class="history-list">{% for t in tournaments %}<article class="history-row"><div class="history-symbol">{{ mode_icon(t) }}</div><div class="history-main"><div class="history-meta"><span class="series-badge">{% if t.best_of==3 %}MD3{% elif t.format_type=='round_robin' %}LIGA{% elif t.format_type=='ffa' %}FFA{% else %}MATA-MATA{% endif %}</span><span>{{ t.completed_at or t.updated_at }}</span></div><h2>{{ t.name }}</h2><p>{{ t.filled }} {{ 'equipes' if t.team_size>1 else 'jogadores' }} • {{ t.matches }} confronto(s) • Prêmio: {{ prize_label(t) }}</p><div class="history-champion winner-neon"><small>VENCEDOR{% if t.winners|length>1 %}ES{% endif %}</small><strong>{% if t.winners %}{% for w in t.winners %}{{ w.entry.display_name }}{% if not loop.last %} • {% endif %}{% endfor %}{% else %}Resultado não informado{% endif %}</strong></div></div><div class="history-actions"><a class="btn secondary" href="{{ url_for('tournament_page',slug=t.slug) }}">RESUMO</a>{% if t.matches %}<a class="btn ghost" href="{{ url_for('tournament_matches',slug=t.slug) }}">QUEM LUTOU COM QUEM</a>{% endif %}</div></article>{% endfor %}</div>{% else %}<div class="empty"><h3>O Hall das Lendas ainda está vazio</h3><p>Os torneios finalizados aparecerão aqui automaticamente.</p></div>{% endif %}
+</section>
+{% endblock %}

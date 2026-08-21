@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Admin • {{ site.title }}{% endblock %}
+{% block content %}
+<section class="admin-head">
+  <div><span class="eyebrow">PAINEL ADMINISTRATIVO V6</span><h1>Central de torneios</h1><p>Crie vários torneios, mas só abra ao público quando estiver pronto.</p></div>
+  <div class="admin-actions"><form method="post" action="{{ url_for('admin_refresh_all_avatars') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn secondary">🖼 ATUALIZAR PERFIS</button></form><a class="btn secondary" href="{{ url_for('admin_backup') }}">BACKUP SQLITE</a><a class="btn danger-outline" href="{{ url_for('admin_logout') }}">SAIR</a></div>
+</section>
+
+<section class="section admin-section"><div class="stat-grid four-stats"><div class="stat"><small>Torneios abertos</small><strong>{{ open_tournaments|selectattr('registration_open')|list|length }}</strong></div><div class="stat"><small>Em andamento</small><strong>{{ running_tournaments|length }}</strong></div><div class="stat"><small>Finalizados</small><strong>{{ history_tournaments|length }}</strong></div><div class="stat"><small>Comunidade</small><strong>{{ community_members|length }}</strong></div></div></section>
+
+<section class="section admin-section">
+<details class="admin-block create-tournament-block" open>
+<summary><span>＋</span> Criar novo torneio</summary>
+<form method="post" action="{{ url_for('admin_create_tournament') }}" class="admin-form">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<div class="admin-grid">
+<label><span>Modalidade</span><select name="mode_key" id="mode-key-select" required>{% for key,info in templates.items() %}<option value="{{key}}">{{info.label}}</option>{% endfor %}</select></label>
+<label><span>Nome do torneio</span><input name="name" placeholder="Ex.: Copa Chamas #2"></label>
+<label><span>Nome curto</span><input name="short_name" placeholder="Ex.: Copa #2"></label>
+<label><span>Prêmio em dinheiro (opcional)</span><input name="prize_total" type="number" min="0" step="0.01" value="0"></label>
+<label><span>Moeda</span><input name="currency" value="R$"></label>
+<label><span>Nome do prêmio / objeto</span><input name="prize_name" placeholder="Ex.: Troféu, booster Pokémon, teclado gamer..."></label>
+<label><span>Máximo de inscrições</span><input name="max_entries" type="number" min="2" value="12"></label>
+<label><span>Data</span><input name="event_date" type="date"></label>
+<label><span>Horário</span><input name="event_time" type="time"></label>
+<label><span>Mapa</span><input name="map_name" value="A definir"></label>
+<label class="full"><span>Descrição personalizada (opcional)</span><textarea name="description"></textarea></label>
+<label class="full"><span>Observações</span><textarea name="notes"></textarea></label>
+<label class="check"><input type="checkbox" name="registration_open"><span>🔥 Abrir inscrições imediatamente</span></label>
+<label class="check"><input type="checkbox" name="is_public"><span>Exibir no site mesmo fechado</span></label>
+</div>
+<div class="template-help"><b>Importante:</b> novos torneios ficam fechados por padrão. Eles só entram em <b>Torneios Abertos</b> quando você marcar “Inscrições abertas”.</div>
+<button class="btn primary big">CRIAR TORNEIO</button>
+</form></details></section>
+
+{% macro admin_cards(list,title,eyebrow) -%}
+<section class="section admin-section"><div class="section-head"><div><span class="eyebrow">{{eyebrow}}</span><h3>{{title}}</h3></div></div>
+{% if list %}<div class="admin-mode-grid">{% for t in list %}<article class="admin-mode-card"><div class="mode-top"><span class="mode-icon">{{mode_icon(t)}}</span><div class="card-badges">{% if t.best_of==3 %}<span class="series-badge">MD3</span>{% endif %}<span class="status status-{{t.status}}">{{t.status}}</span>{% if not t.registration_open and t.status=='inscricoes' %}<span class="status">FECHADO</span>{% endif %}</div></div><h2>{{t.name}}</h2><p class="admin-card-mode">{% if t.best_of==3 %}Melhor de 3 • {% endif %}{% if t.format_type=='elimination' %}Mata-mata{% elif t.format_type=='round_robin' %}Todos contra todos{% else %}FFA{% endif %}</p><p><b>Prêmio:</b> {{ prize_label(t) }}</p><div class="admin-mode-stats"><span><b>{{t.filled}}/{{t.max_entries}}</b> {{'equipes' if t.team_size>1 else 'jogadores'}}</span><span><b>{{t.matches_done}}/{{t.matches}}</b> jogos</span></div><a class="btn primary" href="{{url_for('admin_tournament',tournament_id=t.id)}}">GERENCIAR</a>{% if t.is_public %}<a class="btn ghost" target="_blank" href="{{url_for('tournament_page',slug=t.slug)}}">VER SITE ↗</a>{% endif %}</article>{% endfor %}</div>
+{% else %}<div class="empty">Nenhum torneio nesta categoria.</div>{% endif %}</section>
+{%- endmacro %}
+
+{{ admin_cards(open_tournaments,'Torneios criados / inscrições','🔥 TORNEIOS') }}
+{{ admin_cards(running_tournaments,'Torneios em andamento','⚔️ BATALHAS ATIVAS') }}
+{{ admin_cards(history_tournaments,'Histórico administrável','🏛️ FINALIZADOS') }}
+
+<section class="section admin-section">
+<details class="admin-block" open><summary><span>⚡</span> Elo da Comunidade</summary>
+<div class="admin-form">
+<p class="section-copy">Somente o administrador pode cadastrar integrantes deste ranking. Cole o perfil do AoMStats para buscar automaticamente <b>Nick, Elo Sup 1v1 e foto Steam</b>. O maior Elo vira <b>Melhor da Comunidade</b>; o menor fica com o título <b>Pior Fracassado</b>.</p>
+<form method="post" enctype="multipart/form-data" action="{{ url_for('admin_community_add') }}" class="community-aom-form" data-elo-mode="1v1">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+<div class="lookup-player-box community-lookup-box">
+  <div class="community-lookup-title">
+    <div>
+      <span class="eyebrow">AOMSTATS • SUP 1V1</span>
+      <h4>Buscar jogador automaticamente</h4>
+      <p>Cole o perfil do AoMStats. O sistema procura Nick, Elo e a mesma foto Steam exibida no perfil.</p>
+    </div>
+    <div class="community-profile-preview">
+      <div class="community-preview-avatar-wrap">
+        <span class="community-preview-placeholder">🔥</span>
+        <img class="aom-avatar-preview" alt="Foto do jogador" hidden>
+      </div>
+      <div class="community-preview-data">
+        <strong class="aom-preview-name">Aguardando perfil</strong>
+        <small class="aom-preview-elo">Elo Sup 1v1</small>
+      </div>
+    </div>
+  </div>
+
+  <label class="full">
+    <span>Perfil AoMStats *</span>
+    <div class="inline">
+      <input class="aom-url" name="aomstats_url" required
+             placeholder="https://aomstats.io/profile/1076869557">
+      <button type="button" class="btn secondary lookup-aom">BUSCAR DADOS</button>
+    </div>
+    <small>Nick, Elo e foto serão buscados automaticamente.</small>
+  </label>
+
+  <div class="lookup-status"></div>
+
+  <div class="two-col">
+    <label>
+      <span>Nick — automático</span>
+      <input class="aom-nick" name="nickname" placeholder="Preenchido pelo AoMStats">
+    </label>
+    <label>
+      <span>Elo da Comunidade — automático</span>
+      <input class="aom-elo" name="elo" type="number" min="0" max="5000"
+             placeholder="Elo Sup 1v1">
+    </label>
+  </div>
+
+  <div class="two-col">
+    <label>
+      <span>Discord (opcional)</span>
+      <input name="discord" placeholder="Preenchimento manual">
+    </label>
+    <label>
+      <span>Foto manual do PC (opcional)</span>
+      <input class="manual-avatar-input" name="avatar" type="file" accept="image/png,image/jpeg,image/webp">
+      <small>Se o AoMStats não tiver avatar, você pode escolher uma foto.</small>
+    </label>
+  </div>
+  <label class="full">
+    <span>Frase do jogador (opcional)</span>
+    <input name="quote" maxlength="220" placeholder="Ex.: Eu não temo deuses, eu os desafio.">
+    <small>Essa frase aparecerá no perfil público do Elo da Comunidade.</small>
+  </label>
+  <label class="full">
+    <span>Observação administrativa (opcional)</span>
+    <input name="notes" placeholder="Ex.: Campeão da temporada passada">
+  </label>
+  <div class="normal-stats-preview">
+    <b>Partidas normais (Customs/Quickplay)</b>
+    <span class="aom-normal-stats">Serão buscadas junto com o perfil.</span>
+  </div>
+
+  <div class="community-auto-info">
+    <b>✓ Não é obrigatório clicar em “Buscar Dados”.</b>
+    <span>Ao clicar em “Cadastrar na Comunidade”, o servidor consulta o AoMStats novamente antes de salvar.</span>
+  </div>
+</div>
+
+<button class="btn primary big">CADASTRAR NA COMUNIDADE</button>
+</form>
+
+{% if community_members %}
+<div class="community-admin-list">
+{% for c in community_members %}
+<div class="community-admin-row {% if loop.first %}best{% endif %} {% if loop.last and community_members|length>1 %}worst{% endif %}">
+  <span class="rank-num">#{{ loop.index }}</span>
+  {% if avatar_src(c) %}<img class="avatar-img small" src="{{ avatar_src(c) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}
+  <div class="community-admin-main">
+    <b>{{ c.nickname }}</b>
+    <small>{% if loop.first %}👑 MELHOR DA COMUNIDADE{% elif loop.last and community_members|length>1 %}💀 PIOR FRACASSADO{% else %}Ranking da comunidade{% endif %}</small>
+    <span class="community-admin-rating">
+      {% if c.has_elo %}<strong>{{ c.community_elo }} ELO</strong>
+      {% else %}<strong class="no-elo-badge">SEM ELO</strong> • {{ community_level_text(c) }}{% endif %}
+    </span>
+    <span class="community-normal-line">
+      Normais: {{ c.normal_wins }}V • {{ c.normal_losses }}D
+      {% if c.normal_stats_available %}• {{ '%.1f'|format(c.normal_win_rate) }}%{% else %}• dados indisponíveis{% endif %}
+    </span>
+    {% if c.quote %}<span class="community-admin-quote">“{{ c.quote }}”</span>{% endif %}
+  </div>
+  <form method="post" action="{{ url_for('admin_community_refresh',member_id=c.community_member_id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button class="btn secondary">ATUALIZAR AOMSTATS</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_community_remove',member_id=c.community_member_id) }}" onsubmit="return confirm('Remover {{c.nickname}} do ranking?')">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button class="btn danger">REMOVER</button>
+  </form>
+
+  <details class="community-profile-editor">
+    <summary class="btn ghost">EDITAR FOTO E FRASE</summary>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_community_profile_edit',member_id=c.community_member_id) }}" class="admin-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label class="full">
+        <span>Frase</span>
+        <input name="quote" maxlength="220" value="{{ c.quote }}" placeholder="Frase do jogador">
+      </label>
+      <label class="full">
+        <span>Nova foto do PC</span>
+        <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp">
+        <small>Se escolher uma foto, ela substitui a atual.</small>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="use_aom_avatar">
+        <span>Voltar a usar a foto do AoMStats/Steam</span>
+      </label>
+      <button class="btn primary">SALVAR FOTO E FRASE</button>
+    </form>
+  </details>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div></details>
+</section>
+
+<section class="section admin-section">
+<details class="admin-block" open>
+<summary><span>🤝</span> Patrocinadores oficiais</summary>
+<div class="admin-form">
+  <p class="section-copy">
+    Cadastre patrocinadores pelo perfil do AoMStats. O sistema busca automaticamente
+    <b>nome e a mesma foto Steam/AoMStats</b> exibida no perfil.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_sponsor_add') }}" class="sponsor-aom-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="lookup-player-box sponsor-lookup-box" data-elo-mode="1v1">
+      <div class="community-lookup-title">
+        <div>
+          <span class="eyebrow">PATROCINADOR • AOMSTATS</span>
+          <h4>Buscar patrocinador automaticamente</h4>
+          <p>Cole o perfil do AoMStats para preencher nome e foto Steam.</p>
+        </div>
+
+        <div class="community-profile-preview sponsor-profile-preview">
+          <div class="community-preview-avatar-wrap">
+            <span class="community-preview-placeholder">🤝</span>
+            <img class="aom-avatar-preview" alt="Foto do patrocinador" hidden>
+          </div>
+          <div class="community-preview-data">
+            <strong class="aom-preview-name">Aguardando perfil</strong>
+            <small class="aom-preview-elo">Patrocinador oficial</small>
+          </div>
+        </div>
+      </div>
+
+      <label class="full">
+        <span>Perfil AoMStats do patrocinador *</span>
+        <div class="inline">
+          <input class="aom-url" name="aomstats_url" required
+                 placeholder="https://aomstats.io/profile/1076869557">
+          <button type="button" class="btn secondary lookup-aom">BUSCAR DADOS</button>
+        </div>
+      </label>
+
+      <div class="lookup-status"></div>
+
+      <div class="two-col">
+        <label>
+          <span>Nome — automático</span>
+          <input class="aom-nick" name="name" placeholder="Preenchido pelo AoMStats">
+        </label>
+        <label>
+          <span>Site / Instagram (opcional)</span>
+          <input name="website" placeholder="https://...">
+        </label>
+      </div>
+      <label>
+        <span>Foto manual do PC (opcional)</span>
+        <input class="manual-avatar-input" name="avatar" type="file" accept="image/png,image/jpeg,image/webp">
+        <small>Se o patrocinador não tiver foto no AoMStats, envie uma aqui.</small>
+      </label>
+
+      <input class="aom-elo" name="elo" type="hidden">
+
+      <div class="community-auto-info">
+        <b>✓ A foto usada será a mesma foto Steam/AoMStats do perfil.</b>
+        <span>Ao cadastrar, o servidor consulta o AoMStats novamente antes de salvar.</span>
+      </div>
+    </div>
+
+    <button class="btn primary big">CADASTRAR PATROCINADOR</button>
+  </form>
+
+  {% if sponsors %}
+  <div class="sponsor-admin-list sponsor-admin-aom-list">
+    {% for s in sponsors %}
+    <div class="sponsor-admin-row">
+      <div class="sponsor-admin-profile">
+        {% if sponsor_avatar_src(s) %}
+          <img class="sponsor-admin-avatar" src="{{ sponsor_avatar_src(s) }}" alt="{{ s.name }}">
+        {% else %}
+          <span class="sponsor-admin-avatar sponsor-fallback">🤝</span>
+        {% endif %}
+        <div>
+          <strong>{{ s.name }}</strong>
+          {% if s.aomstats_url %}
+            <a target="_blank" rel="noopener" href="{{ s.aomstats_url }}">AoMStats ↗</a>
+          {% endif %}
+          {% if s.website %}
+            <a target="_blank" rel="noopener" href="{{ s.website }}">Site ↗</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if s.aomstats_url %}
+      <form method="post" action="{{ url_for('admin_sponsor_refresh', sponsor_id=s.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn secondary">ATUALIZAR AOMSTATS</button>
+      </form>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('admin_sponsor_remove',sponsor_id=s.id) }}"
+            onsubmit="return confirm('Remover {{ s.name }} dos patrocinadores?')">
+        <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+        <button class="btn danger">REMOVER</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</details>
+</section>
+
+<section class="section admin-section"><details class="admin-block"><summary><span>🎨</span> Identidade visual do site</summary><form method="post" action="{{ url_for('admin_site_settings') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Nome do site</span><input name="title" value="{{ site.title }}"></label><label><span>Subtítulo</span><input name="subtitle" value="{{ site.subtitle }}"></label><label><span>Cor principal</span><input type="color" name="accent_color" value="{{ site.accent_color }}"></label><label class="full"><span>Frase do topo</span><input name="hero_text" value="{{ site.hero_text }}"></label><label class="full"><span>Descrição</span><textarea name="description">{{ site.description }}</textarea></label><label><span>Fundo</span><select name="background_preset">{% for v,l in [('ember','Fogo'),('obsidian','Obsidiana'),('temple','Templo'),('ocean','Atlântida')] %}<option value="{{v}}" {% if site.background_preset==v %}selected{% endif %}>{{l}}</option>{% endfor %}</select></label><label class="full"><span>Imagem principal</span><input name="hero_image_url" value="{{ site.hero_image_url }}"></label><label class="full"><span>Galeria 1</span><input name="gallery_image_1" value="{{ site.gallery_image_1 }}"></label><label class="full"><span>Galeria 2</span><input name="gallery_image_2" value="{{ site.gallery_image_2 }}"></label><label class="full"><span>Galeria 3</span><input name="gallery_image_3" value="{{ site.gallery_image_3 }}"></label><label class="full"><span>Rodapé</span><input name="footer_text" value="{{ site.footer_text }}"></label></div><button class="btn primary">SALVAR SITE</button></form></details></section>
+<section class="section admin-section"><details class="admin-block"><summary><span>🔐</span> Alterar senha</summary><form method="post" action="{{ url_for('admin_change_password') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Senha atual</span><input name="old_password" type="password" required></label><label><span>Nova senha</span><input name="new_password" type="password" minlength="8" required></label><label><span>Confirmar</span><input name="confirm_password" type="password" minlength="8" required></label></div><button class="btn secondary">ALTERAR SENHA</button></form></details></section>
+{% endblock %}

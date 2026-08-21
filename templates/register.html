@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Inscrição • {{ tournament.name }}{% endblock %}
+{% block content %}
+<section class="page-hero compact"><span class="eyebrow">INSCRIÇÃO • {{ tournament.short_name }}</span><h1>{{ 'Monte sua equipe' if tournament.team_size > 1 else 'Entre para o torneio' }}</h1><p>{{ tournament.description }}</p></section>
+<section class="section narrow-wide">
+  {% if not tournament.registration_open or spots_left <= 0 %}<div class="empty"><h3>Inscrições encerradas</h3><p>Não há vagas abertas nesta modalidade.</p></div>{% else %}
+  <form method="post" enctype="multipart/form-data" class="panel form-stack public-register" data-elo-mode="{{ tournament.elo_mode }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    {% if tournament.team_size == 1 %}
+      <div class="lookup-player-box">
+        <div class="player-box-title"><span>👤</span><div><b>Jogador</b><small>Perfil AoMStats obrigatório</small></div></div>
+        <label><span>Link do perfil AoMStats *</span><div class="inline"><input class="aom-url" name="aomstats_url" required placeholder="https://aomstats.io/profile/1076869557"><button type="button" class="btn secondary lookup-aom">BUSCAR</button></div></label>
+        <div class="lookup-status"></div>
+        <div class="two-col"><label><span>Nick *</span><input class="aom-nick" name="nickname" required maxlength="80"></label><label><span>Elo {{ 'Sup Team' if tournament.elo_mode=='team' else 'Sup 1v1' }} (automático)</span><input class="aom-elo" name="elo" type="number" min="0" max="5000" placeholder="SEM ELO se o AoMStats não tiver"></label></div>
+        <div class="two-col"><label><span>Discord (opcional)</span><input name="discord" maxlength="80"></label><label><span>Foto manual (opcional)</span><input class="manual-avatar-input" type="file" name="avatar" accept="image/png,image/jpeg,image/webp"><small>Use se o perfil não tiver foto.</small></label></div>
+        <label><span>Sua frase (opcional)</span><input name="quote" maxlength="220" placeholder="Ex.: A vitória pertence a quem não desiste."><small>Essa frase ficará visível junto ao seu perfil.</small></label>
+      </div>
+    {% else %}
+      <div class="two-col"><label><span>Nome da equipe *</span><input name="team_name" required maxlength="100" placeholder="Ex.: Filhos de Odin"></label><label><span>Discord do capitão</span><input name="captain_discord" maxlength="80"></label></div>
+      {% for i in range(1,tournament.team_size+1) %}
+        {% set role = ['FOOD','WOOD','GOLD'][i-1] if tournament.mode_key=='food_wood_gold' else 'JOGADOR ' ~ i %}
+        <div class="lookup-player-box">
+          <div class="player-box-title"><span>{% if role=='FOOD' %}🥩{% elif role=='WOOD' %}🪵{% elif role=='GOLD' %}🪙{% else %}⚔️{% endif %}</span><div><b>{{ role }}</b><small>Jogador {{ i }} da equipe</small></div></div>
+          <label><span>Perfil AoMStats *</span><div class="inline"><input class="aom-url" name="member_{{ i }}_aomstats" required placeholder="https://aomstats.io/profile/ID"><button type="button" class="btn secondary lookup-aom">BUSCAR</button></div></label>
+          <div class="lookup-status"></div>
+          <div class="two-col"><label><span>Nick *</span><input class="aom-nick" name="member_{{ i }}_nickname" required></label><label><span>Elo {{ 'Sup Team' if tournament.elo_mode=='team' else 'Sup 1v1' }} (automático)</span><input class="aom-elo" name="member_{{ i }}_elo" type="number" min="0" max="5000" placeholder="SEM ELO"></label></div>
+          <label><span>Foto manual do jogador {{ i }} (opcional)</span><input class="manual-avatar-input" type="file" name="member_{{ i }}_avatar" accept="image/png,image/jpeg,image/webp"><small>Use somente se quiser substituir/completar a foto do AoMStats.</small></label>
+          <label><span>Frase do jogador {{ i }} (opcional)</span><input name="member_{{ i }}_quote" maxlength="220" placeholder="Ex.: Até os deuses podem cair."></label>
+        </div>
+      {% endfor %}
+    {% endif %}
+    <div class="form-info"><b>{{ spots_left }} {{ 'equipe(s)' if tournament.team_size > 1 else 'vaga(s)' }} restante(s)</b><span>Ao enviar, Nick, Elo, foto e AoMStats ficam visíveis na página da modalidade.</span></div>
+    <button class="btn primary big" type="submit">CONFIRMAR INSCRIÇÃO</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

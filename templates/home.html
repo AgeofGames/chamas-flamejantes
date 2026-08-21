@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero" style="--hero-image:url('{{ site.hero_image_url }}')">
+  <div class="hero-content">
+    <span class="eyebrow">AGE OF MYTHOLOGY: RETOLD • TORNEIOS DA COMUNIDADE</span>
+    <h1>{{ site.title }}</h1>
+    <h2>{{ site.hero_text }}</h2>
+    <p>{{ site.description }}</p>
+    <div class="hero-stats">
+      <div><strong>{{ open_tournaments|length }}</strong><span>torneios abertos</span></div>
+      <div><strong>{{ running_tournaments|length }}</strong><span>em andamento</span></div>
+      <div><strong>7 MODOS</strong><span>incluindo MD3</span></div>
+    </div>
+    <div class="mode-actions"><a class="btn primary big" href="#abertos">VER TORNEIOS ABERTOS</a><a class="btn secondary big" href="{{ url_for('tournament_history') }}">HISTÓRICO</a></div>
+  </div>
+</section>
+
+<section class="section" id="abertos">
+  <div class="section-head"><div><span class="eyebrow">🔥 ENTRE AGORA</span><h3>Torneios abertos</h3><p class="section-copy">Apenas os torneios que o administrador abrir para inscrições aparecem aqui.</p></div><a class="text-link" href="{{ url_for('open_tournaments_page') }}">Ver painel completo →</a></div>
+  {% if open_tournaments %}<div class="mode-grid">{% for t in open_tournaments %}{% include '_tournament_card.html' %}{% endfor %}</div>{% else %}<div class="empty"><h3>Nenhum torneio aberto agora</h3><p>Quando o administrador abrir um novo torneio, ele aparecerá aqui.</p></div>{% endif %}
+</section>
+
+{% if running_tournaments %}
+<section class="section running-section">
+  <div class="section-head"><div><span class="eyebrow">⚔️ AO VIVO</span><h3>Torneios em andamento</h3></div></div>
+  <div class="mode-grid">{% for t in running_tournaments %}{% include '_tournament_card.html' %}{% endfor %}</div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">MODALIDADES</span><h3>Sete formas de entrar na guerra</h3></div></div>
+  <div class="feature-grid mode-library">
+    <article class="feature"><span>🔥</span><h4>FFA</h4><p>12 jogadores, sem regras e possibilidade de vários vencedores.</p></article>
+    <article class="feature"><span>🥩🪵🪙</span><h4>Food Wood Gold</h4><p>3x3 eliminatório, com funções FOOD, WOOD e GOLD.</p></article>
+    <article class="feature"><span>⚔️</span><h4>1v1 Liga</h4><p>Até 32 jogadores. Todos enfrentam todos.</p></article>
+    <article class="feature"><span>🤝</span><h4>2x2 Eliminação</h4><p>Duplas em mata-mata: perdeu, acabou.</p></article>
+    <article class="feature md3-feature"><span>⅔</span><h4>MD3 1x1</h4><p>Séries Melhor de 3 individuais. Primeiro a duas vitórias avança.</p></article>
+    <article class="feature md3-feature"><span>⅔</span><h4>MD3 2x2</h4><p>Duplas disputam séries 2x0 ou 2x1 até a final.</p></article>
+    <article class="feature md3-feature"><span>⅔</span><h4>MD3 3x3</h4><p>Equipes de três em séries Melhor de 3 eliminatórias.</p></article>
+  </div>
+</section>
+
+{% if history_tournaments %}
+<section class="section history-preview">
+  <div class="section-head"><div><span class="eyebrow">🏛️ ARQUIVO DAS BATALHAS</span><h3>Últimos torneios finalizados</h3></div><a class="text-link" href="{{ url_for('tournament_history') }}">Ver histórico completo →</a></div>
+  <div class="mode-grid">{% for t in history_tournaments %}{% include '_tournament_card.html' %}{% endfor %}</div>
+</section>
+{% endif %}
+
+
+{% if community_members %}
+<section class="section community-preview-section">
+  <div class="section-head">
+    <div><span class="eyebrow">⚡ ELO DA COMUNIDADE</span><h3>Quem domina a comunidade?</h3><p class="section-copy">Ranking oficial cadastrado exclusivamente pelo administrador.</p></div>
+    <a class="text-link" href="{{ url_for('community_page') }}">Ver ranking completo →</a>
+  </div>
+  <div class="community-highlight-grid">
+    {% if community_best %}
+    <article class="community-highlight best">
+      <small>👑 MELHOR DA COMUNIDADE</small>
+      {% if avatar_src(community_best) %}<img src="{{ avatar_src(community_best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      <h3>{{ community_best.nickname }}</h3>{% if community_best.has_elo %}<strong>{{ community_best.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_best) }}</span>{% endif %}<span class="normal-record">{{ community_best.normal_wins }}V • {{ community_best.normal_losses }}D em normais</span>{% if community_best.quote %}<span class="player-quote">“{{community_best.quote}}”</span>{% endif %}
+      {% if community_best.aomstats_url %}<a class="neon-profile" target="_blank" href="{{ community_best.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
+    </article>
+    {% endif %}
+    {% if community_worst and community_members|length > 1 %}
+    <article class="community-highlight worst">
+      <small>💀 PIOR FRACASSADO</small>
+      {% if avatar_src(community_worst) %}<img src="{{ avatar_src(community_worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      <h3>{{ community_worst.nickname }}</h3>{% if community_worst.has_elo %}<strong>{{ community_worst.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_worst) }}</span>{% endif %}<span class="normal-record">{{ community_worst.normal_wins }}V • {{ community_worst.normal_losses }}D em normais</span>{% if community_worst.quote %}<span class="player-quote">“{{community_worst.quote}}”</span>{% endif %}
+      {% if community_worst.aomstats_url %}<a class="neon-profile danger-neon" target="_blank" href="{{ community_worst.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
+    </article>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if sponsors %}
+<section class="section sponsors-section">
+  <div class="section-head"><div><span class="eyebrow">🤝 APOIO</span><h3>Patrocinadores oficiais</h3></div></div>
+  <div class="sponsor-grid sponsor-profile-grid">
+    {% for sponsor in sponsors %}
+    <article class="sponsor-card sponsor-profile-card">
+      {% if sponsor_avatar_src(sponsor) %}
+        <img class="sponsor-avatar" src="{{ sponsor_avatar_src(sponsor) }}" alt="{{ sponsor.name }}">
+      {% else %}
+        <span class="sponsor-avatar sponsor-avatar-fallback">🤝</span>
+      {% endif %}
+
+      <div class="sponsor-card-info">
+        <small>PATROCINADOR OFICIAL</small>
+        <strong>{{ sponsor.name }}</strong>
+        <div class="sponsor-links">
+          {% if sponsor.aomstats_url %}
+            <a class="sponsor-aom-link" target="_blank" rel="noopener" href="{{ sponsor.aomstats_url }}">AoMStats ↗</a>
+          {% endif %}
+          {% if sponsor.website %}
+            <a target="_blank" rel="noopener" href="{{ sponsor.website }}">Site ↗</a>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="aom-showcase"><div class="aom-showcase-grid"><figure class="aom-shot aom-shot-main"><img src="{{ site.gallery_image_1 }}" alt="Age of Mythology Retold"><figcaption><small>AGE OF MYTHOLOGY: RETOLD</small><strong>Participe de vários torneios. Cada batalha fica registrada.</strong></figcaption></figure><figure class="aom-shot"><img src="{{ site.gallery_image_2 }}" alt="Batalha"><figcaption><small>CONFRONTOS</small><strong>Chaves, séries MD3 e todos contra todos.</strong></figcaption></figure><figure class="aom-shot"><img src="{{ site.gallery_image_3 }}" alt="Mitologia"><figcaption><small>HISTÓRICO</small><strong>Campeões e confrontos permanecem públicos.</strong></figcaption></figure></div></section>
+{% endblock %}

@@ -1,0 +1,29 @@
+<article class="mode-card tournament-instance-card">
+  <div class="mode-top">
+    <span class="mode-icon">{{ mode_icon(t) }}</span>
+    <div class="card-badges">
+      {% if t.best_of == 3 %}<span class="series-badge">MD3</span>{% endif %}
+      <span class="status status-{{ t.status }}">{{ t.status }}</span>
+    </div>
+  </div>
+  <span class="eyebrow">
+    {% if t.best_of == 3 %}MELHOR DE 3 • {% endif %}
+    {% if t.format_type=='elimination' %}ELIMINAÇÃO DIRETA{% elif t.format_type=='round_robin' %}TODOS CONTRA TODOS{% else %}FREE FOR ALL{% endif %}
+  </span>
+  <h2>{{ t.name }}</h2>
+  <p>{{ t.description }}</p>
+  <div class="mode-facts">
+    <div><strong>{{ t.filled }}/{{ t.max_entries }}</strong><small>{{ 'equipes' if t.team_size > 1 else 'jogadores' }}</small></div>
+    <div><strong>{{ prize_label(t) }}</strong><small>premiação</small></div>
+    <div><strong>{% if t.best_of == 3 %}MD3{% elif t.team_size > 1 %}{{ t.team_size }}x{{ t.team_size }}{% else %}1 jogador{% endif %}</strong><small>{% if t.best_of == 3 %}primeiro a 2{% else %}formato{% endif %}</small></div>
+  </div>
+  {% if t.status == 'inscricoes' %}<div class="progress"><i style="width:{{ t.progress }}%"></i></div>{% endif %}
+  {% if t.winners %}
+    <div class="card-winner winner-neon"><small>CAMPEÃO{% if t.winners|length > 1 %}ES{% endif %}</small><strong>{% for w in t.winners %}{{ w.entry.display_name }}{% if not loop.last %} • {% endif %}{% endfor %}</strong></div>
+  {% endif %}
+  <div class="mode-actions">
+    <a class="btn secondary" href="{{ url_for('tournament_page', slug=t.slug) }}">VER TORNEIO</a>
+    {% if t.status == 'inscricoes' and t.registration_open and t.left > 0 %}<a class="btn primary" href="{{ url_for('tournament_register', slug=t.slug) }}">INSCREVER-SE</a>{% endif %}
+    {% if t.matches %}<a class="btn ghost" href="{{ url_for('tournament_matches', slug=t.slug) }}">CONFRONTOS</a>{% endif %}
+  </div>
+</article>

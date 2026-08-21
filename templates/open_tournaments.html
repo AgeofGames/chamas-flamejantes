@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Torneios Abertos • {{ site.title }}{% endblock %}
+{% block content %}
+<section class="page-hero compact"><span class="eyebrow">🔥 PAINEL PÚBLICO</span><h1>Torneios abertos</h1><p>Escolha um torneio com inscrições abertas. Você pode participar de modalidades diferentes ao mesmo tempo.</p></section>
+<section class="section"><div class="section-head"><div><span class="eyebrow">INSCRIÇÕES</span><h3>Disponíveis para participar</h3></div></div>{% if open_tournaments %}<div class="mode-grid">{% for t in open_tournaments %}{% include '_tournament_card.html' %}{% endfor %}</div>{% else %}<div class="empty">Nenhum torneio está recebendo inscrições neste momento.</div>{% endif %}</section>
+{% if running_tournaments %}<section class="section"><div class="section-head"><div><span class="eyebrow">EM ANDAMENTO</span><h3>Acompanhe as batalhas</h3></div></div><div class="mode-grid">{% for t in running_tournaments %}{% include '_tournament_card.html' %}{% endfor %}</div></section>{% endif %}
+{% endblock %}

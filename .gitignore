@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+backups/
+persistent/
+*.log
+
+# O SQLite inicial pode ficar no repositório como banco-semente.
+# Depois do deploy, o banco real fica no Railway Volume.
