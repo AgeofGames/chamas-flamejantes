@@ -1,0 +1,4 @@
+CHAMAS FLAMEJANTES V9 - RAILWAY + SQLITE PERSISTENTE
+Base: V7.5
+Volume Railway recomendado: /app/persistent
+Admin inicial: yukinochannyan / yukinochannyan60
