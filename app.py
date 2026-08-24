@@ -211,6 +211,9 @@ def init_db():
             safe_default = default_url.replace("'", "''")
             db.execute(f"ALTER TABLE tournament_settings ADD COLUMN {column} TEXT NOT NULL DEFAULT '{safe_default}'")
 
+    if not _has_column(db, "maps", "category"):
+        db.execute("ALTER TABLE maps ADD COLUMN category TEXT DEFAULT 'FFA'")
+
     db.execute(
         "UPDATE tournament_settings SET title='Chamas Flamejantes' WHERE id=1 AND title='FFA UNDERLORD'"
     )
@@ -2812,6 +2815,35 @@ def admin_backup():
     return send_file(DB_PATH,as_attachment=True,download_name="chamas_flamejantes_v6_backup.sqlite")
 
 
+
+@app.get("/admin/duelos")
+@admin_required
+def admin_duels():
+    db = get_db()
+    duels = db.execute("""
+        SELECT d.*, 
+        p1.nickname AS p1_nick, p1.avatar_url AS p1_avatar,
+        p2.nickname AS p2_nick, p2.avatar_url AS p2_avatar
+        FROM duels d
+        JOIN players p1 ON p1.id=d.player1_id
+        JOIN players p2 ON p2.id=d.player2_id
+        ORDER BY d.created_at DESC
+    """).fetchall()
+    return render_template("admin_duels.html", duels=duels)
+
+
+@app.post("/admin/duelo/<int:duel_id>/status")
+@admin_required
+def admin_duel_status(duel_id):
+    require_csrf()
+    status = request.form.get("status","pending")
+    db = get_db()
+    db.execute("UPDATE duels SET status=? WHERE id=?", (status, duel_id))
+    db.commit()
+    flash("Status do duelo atualizado.", "success")
+    return redirect(url_for("admin_duels"))
+
+
 @app.get("/health")
 def health():
     return {
@@ -2823,6 +2855,127 @@ def health():
         "tournaments": len(all_tournaments()),
         "community": len(community_ranking()),
     }
+
+
+
+# ================= V10 MAPAS, LINKS E DUELOS =================
+
+def v10_storage(folder):
+    p = UPLOAD_DIR.parent / folder
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+@app.get("/mapas")
+def mapas():
+    db=get_db()
+    maps=db.execute("SELECT * FROM maps ORDER BY id DESC").fetchall()
+    return render_template("maps.html", maps=maps)
+
+@app.get("/mapa/download/<int:map_id>")
+def download_map(map_id):
+    db=get_db()
+    m=db.execute("SELECT * FROM maps WHERE id=?",(map_id,)).fetchone()
+    if not m: abort(404)
+    db.execute("UPDATE maps SET downloads=downloads+1 WHERE id=?",(map_id,))
+    db.commit()
+    return send_from_directory(v10_storage("maps"), m["map_file"], as_attachment=True)
+
+@app.post("/admin/mapa/add")
+@admin_required
+def add_map():
+    require_csrf()
+    db=get_db()
+    file=request.files.get("map_file")
+    image=request.files.get("map_image")
+    folder=v10_storage("maps")
+    mf=""
+    im=""
+    if file and file.filename:
+        mf=file.filename
+        file.save(folder/mf)
+    if image and image.filename:
+        im="img_"+image.filename
+        image.save(folder/im)
+    db.execute("""INSERT INTO maps(name,description,creator,image_file,map_file,category)
+                  VALUES(?,?,?,?,?,?)""",
+               (request.form.get("name",""),request.form.get("description",""),
+                request.form.get("creator",""),im,mf,request.form.get("category","FFA")))
+    db.commit()
+    return redirect("/mapas")
+
+@app.get("/comunidade-oficial")
+def official_links():
+    db=get_db()
+    links=db.execute("SELECT * FROM community_links WHERE id=1").fetchone()
+    return render_template("official_links.html",links=links)
+
+@app.get("/duelos")
+def duels():
+    db=get_db()
+    rows=db.execute("""SELECT d.*,p1.nickname p1_name,p1.avatar_url p1_avatar,p1.avatar_file p1_file,
+                       p2.nickname p2_name,p2.avatar_url p2_avatar,p2.avatar_file p2_file
+                       FROM duels d
+                       JOIN players p1 ON p1.id=d.player1_id
+                       LEFT JOIN players p2 ON p2.id=d.player2_id
+                       ORDER BY d.id DESC""").fetchall()
+    ranking=db.execute("""SELECT p.nickname,p.avatar_url,p.avatar_file,r.wins,r.losses,
+                          CASE WHEN r.wins+r.losses=0 THEN 0 ELSE ROUND(r.wins*100.0/(r.wins+r.losses),1) END winrate
+                          FROM duel_ranking r JOIN players p ON p.id=r.player_id
+                          ORDER BY r.wins DESC, winrate DESC""").fetchall()
+    return render_template("duels.html",duels=rows,ranking=ranking)
+
+@app.post("/duelos/solicitar")
+def request_duel():
+    require_csrf()
+    db=get_db()
+    p1=request.form.get("player1_id")
+    p2=request.form.get("player2_id")
+    if not p1 or not p2:
+        flash("Jogadores obrigatórios","error")
+        return redirect("/duelos")
+    active=db.execute("SELECT COUNT(*) FROM duels WHERE status!='finalizado'").fetchone()[0]
+    if active:
+        flash("Já existe um duelo em andamento","error")
+    else:
+        db.execute("INSERT INTO duels(player1_id,player2_id) VALUES(?,?)",(p1,p2))
+        db.commit()
+    return redirect("/duelos")
+
+
+@app.post("/duelos/desafiar/<int:player_id>")
+def challenge_player(player_id):
+    require_csrf()
+    db=get_db()
+    challenger=request.form.get("player_id")
+    if not challenger or str(challenger)==str(player_id):
+        flash("Escolha um adversário válido","error")
+        return redirect("/duelos")
+    active=db.execute("SELECT COUNT(*) FROM duels WHERE status!='finalizado'").fetchone()[0]
+    if active:
+        flash("Já existe um duelo aguardando ou em curso","error")
+    else:
+        db.execute("INSERT INTO duels(player1_id,player2_id,status) VALUES(?,?,?)",
+                   (challenger,player_id,"aguardando"))
+        db.commit()
+        flash("Desafio enviado!","success")
+    return redirect("/duelos")
+
+@app.post("/admin/duelo/<int:duel_id>/winner")
+@admin_required
+def duel_winner(duel_id):
+    require_csrf()
+    db=get_db()
+    w=request.form.get("winner_id")
+    d=db.execute("SELECT * FROM duels WHERE id=?",(duel_id,)).fetchone()
+    if d:
+        db.execute("UPDATE duels SET status='finalizado',winner_id=?,finished_at=CURRENT_TIMESTAMP WHERE id=?",(w,duel_id))
+        for pid,win in [(d["player1_id"],str(w)==str(d["player1_id"])),(d["player2_id"],str(w)==str(d["player2_id"]))]:
+            db.execute("""INSERT INTO duel_ranking(player_id,wins,losses) VALUES(?,?,?)
+                       ON CONFLICT(player_id) DO UPDATE SET
+                       wins=wins+excluded.wins, losses=losses+excluded.losses""",
+                       (pid,1 if win else 0,0 if win else 1))
+        db.commit()
+    return redirect("/duelos")
 
 
 if __name__ == "__main__":

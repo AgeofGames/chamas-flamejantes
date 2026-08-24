@@ -204,3 +204,42 @@ CREATE TABLE IF NOT EXISTS community_members (
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_community_elo ON community_members(community_elo DESC);
+
+
+-- V10 MAPAS
+CREATE TABLE IF NOT EXISTS maps (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL,
+ description TEXT DEFAULT '',
+ creator TEXT DEFAULT '',
+ image_file TEXT DEFAULT '',
+ map_file TEXT DEFAULT '',
+ downloads INTEGER DEFAULT 0,
+ category TEXT DEFAULT 'FFA',
+ created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- V10 LINKS OFICIAIS
+CREATE TABLE IF NOT EXISTS community_links (
+ id INTEGER PRIMARY KEY,
+ whatsapp TEXT DEFAULT '',
+ discord TEXT DEFAULT '',
+ telegram TEXT DEFAULT ''
+);
+
+-- V10 DUELOS
+CREATE TABLE IF NOT EXISTS duels (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ player1_id INTEGER NOT NULL,
+ player2_id INTEGER,
+ status TEXT DEFAULT 'aguardando',
+ winner_id INTEGER,
+ created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+ finished_at TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS duel_ranking (
+ player_id INTEGER PRIMARY KEY,
+ wins INTEGER DEFAULT 0,
+ losses INTEGER DEFAULT 0
+);

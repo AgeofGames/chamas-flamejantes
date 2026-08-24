@@ -296,3 +296,17 @@
 <section class="section admin-section"><details class="admin-block"><summary><span>🎨</span> Identidade visual do site</summary><form method="post" action="{{ url_for('admin_site_settings') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Nome do site</span><input name="title" value="{{ site.title }}"></label><label><span>Subtítulo</span><input name="subtitle" value="{{ site.subtitle }}"></label><label><span>Cor principal</span><input type="color" name="accent_color" value="{{ site.accent_color }}"></label><label class="full"><span>Frase do topo</span><input name="hero_text" value="{{ site.hero_text }}"></label><label class="full"><span>Descrição</span><textarea name="description">{{ site.description }}</textarea></label><label><span>Fundo</span><select name="background_preset">{% for v,l in [('ember','Fogo'),('obsidian','Obsidiana'),('temple','Templo'),('ocean','Atlântida')] %}<option value="{{v}}" {% if site.background_preset==v %}selected{% endif %}>{{l}}</option>{% endfor %}</select></label><label class="full"><span>Imagem principal</span><input name="hero_image_url" value="{{ site.hero_image_url }}"></label><label class="full"><span>Galeria 1</span><input name="gallery_image_1" value="{{ site.gallery_image_1 }}"></label><label class="full"><span>Galeria 2</span><input name="gallery_image_2" value="{{ site.gallery_image_2 }}"></label><label class="full"><span>Galeria 3</span><input name="gallery_image_3" value="{{ site.gallery_image_3 }}"></label><label class="full"><span>Rodapé</span><input name="footer_text" value="{{ site.footer_text }}"></label></div><button class="btn primary">SALVAR SITE</button></form></details></section>
 <section class="section admin-section"><details class="admin-block"><summary><span>🔐</span> Alterar senha</summary><form method="post" action="{{ url_for('admin_change_password') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Senha atual</span><input name="old_password" type="password" required></label><label><span>Nova senha</span><input name="new_password" type="password" minlength="8" required></label><label><span>Confirmar</span><input name="confirm_password" type="password" minlength="8" required></label></div><button class="btn secondary">ALTERAR SENHA</button></form></details></section>
 {% endblock %}
+
+<section class="card">
+<h2>🗺️ Cadastrar Mapa</h2>
+<form method="post" enctype="multipart/form-data" action="/admin/mapa/add">
+<input type="hidden" name="_csrf" value="{{csrf_token()}}">
+<input name="name" placeholder="Nome do mapa">
+<input name="creator" placeholder="Criador">
+<select name="category"><option>FFA</option><option>1x1</option><option>2x2</option><option>3x3</option></select>
+<textarea name="description" placeholder="Descrição"></textarea>
+<input type="file" name="map_image">
+<input type="file" name="map_file">
+<button class="btn primary">SALVAR MAPA</button>
+</form>
+</section>

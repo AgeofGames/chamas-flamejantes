@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+{% block title %}Admin • Duelos{% endblock %}
+{% block content %}
+<section class="page-section">
+<h1>⚔️ Aprovação de Duelos X1</h1>
+<p>Controle todos os desafios da comunidade.</p>
+<div class="cards-grid">
+{% for d in duels %}
+<article class="glass-card duel-admin-card">
+<h3>{{d.p1_nick}} ⚔️ {{d.p2_nick}}</h3>
+<p>Status: <b>{{d.status}}</b></p>
+<form method="post" action="{{url_for('admin_duel_status', duel_id=d.id)}}">
+<input type="hidden" name="_csrf" value="{{csrf_token()}}">
+<button class="btn primary" name="status" value="accepted">ACEITAR</button>
+<button class="btn secondary" name="status" value="rejected">RECUSAR</button>
+<button class="btn" name="status" value="running">COLOCAR EM CURSO</button>
+</form>
+</article>
+{% endfor %}
+</div>
+</section>
+{% endblock %}

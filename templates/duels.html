@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel"><h1>⚔️ Ranking X1</h1><p>Quem domina os duelos?</p></section>
+<div class="cards-grid">
+{% for r in ranking %}
+<article class="card neon-winner">
+{% if r.avatar_file %}<img class="avatar-img" src="/uploads/{{r.avatar_file}}">{% endif %}
+<h2>{% if loop.first %}👑 Mestre do X1{% endif %} {{r.nickname}}</h2>
+<p>🔥 Vitórias: {{r.wins}}</p>
+<p>💀 Derrotas: {{r.losses}}</p>
+<p>📈 Win Rate: {{r.winrate}}%</p>
+</article>
+{% endfor %}
+</div>
+<h2>Histórico de Duelos</h2>
+{% for d in duels %}
+<div class="card">{{d.p1_name}} VS {{d.p2_name}} — {{d.status}}</div>
+{% endfor %}
+{% endblock %}
