@@ -206,40 +206,57 @@ CREATE TABLE IF NOT EXISTS community_members (
 CREATE INDEX IF NOT EXISTS idx_community_elo ON community_members(community_elo DESC);
 
 
--- V10 MAPAS
-CREATE TABLE IF NOT EXISTS maps (
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- name TEXT NOT NULL,
- description TEXT DEFAULT '',
- creator TEXT DEFAULT '',
- image_file TEXT DEFAULT '',
- map_file TEXT DEFAULT '',
- downloads INTEGER DEFAULT 0,
- category TEXT DEFAULT 'FFA',
- created_at TEXT DEFAULT CURRENT_TIMESTAMP
+-- =====================================================================
+-- V10.2 — BIBLIOTECA DE MAPAS + GRUPOS OFICIAIS + DUELOS X1
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS custom_maps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    creator TEXT NOT NULL DEFAULT '',
+    category TEXT NOT NULL DEFAULT 'Outro',
+    description TEXT NOT NULL DEFAULT '',
+    image_file TEXT NOT NULL DEFAULT '',
+    map_file TEXT NOT NULL DEFAULT '',
+    original_filename TEXT NOT NULL DEFAULT '',
+    downloads INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- V10 LINKS OFICIAIS
+CREATE INDEX IF NOT EXISTS idx_custom_maps_active
+ON custom_maps(is_active, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS community_links (
- id INTEGER PRIMARY KEY,
- whatsapp TEXT DEFAULT '',
- discord TEXT DEFAULT '',
- telegram TEXT DEFAULT ''
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    whatsapp TEXT NOT NULL DEFAULT '',
+    discord TEXT NOT NULL DEFAULT '',
+    telegram TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- V10 DUELOS
+INSERT OR IGNORE INTO community_links(id) VALUES (1);
+
 CREATE TABLE IF NOT EXISTS duels (
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- player1_id INTEGER NOT NULL,
- player2_id INTEGER,
- status TEXT DEFAULT 'aguardando',
- winner_id INTEGER,
- created_at TEXT DEFAULT CURRENT_TIMESTAMP,
- finished_at TEXT DEFAULT ''
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player1_id INTEGER NOT NULL,
+    player2_id INTEGER NOT NULL,
+    winner_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending','active','finished','rejected')),
+    requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    accepted_at TEXT DEFAULT '',
+    finished_at TEXT DEFAULT '',
+    admin_notes TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (player1_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY (player2_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY (winner_id) REFERENCES players(id) ON DELETE SET NULL,
+    CHECK(player1_id <> player2_id)
 );
 
-CREATE TABLE IF NOT EXISTS duel_ranking (
- player_id INTEGER PRIMARY KEY,
- wins INTEGER DEFAULT 0,
- losses INTEGER DEFAULT 0
-);
+CREATE INDEX IF NOT EXISTS idx_duels_status
+ON duels(status, requested_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_duels_players
+ON duels(player1_id, player2_id, status);

@@ -1,3 +1,44 @@
+# 🔥 CHAMAS FLAMEJANTES V10.2 — MESTRE DO X1 + MAPAS PRO
+
+**Esta versão foi construída diretamente em cima da V9 Railway funcional.**
+
+O banco continua no mesmo Volume:
+`/app/persistent/tournament.sqlite`
+
+Os uploads existentes continuam em:
+`/app/persistent/uploads`
+
+Os mapas novos ficam em:
+`/app/persistent/maps`
+
+## Novidades
+- Biblioteca pública de mapas com preview, criador, categoria e downloads.
+- Admin de mapas com upload de arquivo + imagem.
+- WhatsApp, Discord e Telegram oficiais editáveis pelo admin.
+- Arena pública de Duelos X1.
+- Apenas jogadores que já existem em `players` e têm AoMStats podem solicitar duelo.
+- Apenas um duelo pendente/em curso por vez.
+- Admin aprova/recusa e registra o vencedor.
+- Histórico público de duelos.
+- Ranking acumulado: vitórias, derrotas, win rate e sequência atual.
+- Primeiro colocado recebe **Mestre do X1**.
+- Perfil público de cada jogador.
+- Botão **DESAFIAR JOGADOR** no perfil.
+- Busca AoMStats na tela de desafio.
+
+## Como atualizar no Railway
+Substitua os arquivos no repositório, faça Commit + Push e aguarde o deploy.
+**Não remova o Volume.**
+
+Confirme em `/health`:
+- `version`: `10.2-mestre-x1`
+- `persistent_storage`: `true`
+
+No log de deploy deve aparecer:
+`CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO`
+
+---
+
 # 🔥 CHAMAS FLAMEJANTES V9 — RAILWAY + SQLITE PERSISTENTE
 
 Esta versão mantém a base da **V7.5** e troca apenas a infraestrutura de hospedagem.

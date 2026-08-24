@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{player.nickname}} • Perfil • {{site.title}}{% endblock %}
+{% block content %}
+<section class="section player-public-profile">
+  <div class="player-profile-hero">
+    {% if avatar_src(player) %}<img src="{{avatar_src(player)}}" alt="{{player.nickname}}">{% else %}<span class="profile-fallback">🔥</span>{% endif %}
+    <div>
+      <span class="eyebrow">PERFIL DA COMUNIDADE</span>
+      <h1>{{player.nickname}}</h1>
+      {% if player.quote %}<blockquote>“{{player.quote}}”</blockquote>{% endif %}
+      <div class="profile-meta">
+        <span>{% if player.elo_1v1 %}{{player.elo_1v1}} ELO 1V1{% else %}SEM ELO{% endif %}</span>
+        <span>{{duel_stats.wins}}V • {{duel_stats.losses}}D</span>
+        <span>{{duel_stats.win_rate}}% Win Rate</span>
+        <span>🔥 {{duel_stats.streak}} sequência</span>
+      </div>
+      <div class="profile-actions">
+        {% if player.aomstats_url %}<a class="btn ghost" target="_blank" href="{{player.aomstats_url}}">AOMSTATS ↗</a>{% endif %}
+        {% if not current_duel %}<a class="btn primary" href="{{url_for('challenge_player',target_player_id=player.id)}}">⚔️ DESAFIAR JOGADOR</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">⚔️ HISTÓRICO X1</span><h3>Últimos duelos</h3></div></div>
+  {% if recent_duels %}
+  <div class="duel-history-list">
+    {% for d in recent_duels %}
+    <article class="duel-history-row">
+      <span>#{{d.id}}</span><b>{{d.player1_name}}</b><em>VS</em><b>{{d.player2_name}}</b><strong>🏆 {{d.winner_name}}</strong><small>{{d.finished_at or d.requested_at}}</small>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty">Este jogador ainda não terminou nenhum duelo X1.</div>{% endif %}
+</section>
+{% endblock %}

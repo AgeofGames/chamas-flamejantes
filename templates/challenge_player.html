@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Desafiar {{target.nickname}} • {{site.title}}{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <span class="eyebrow">⚔️ DESAFIO DIRETO</span>
+  <h1>Desafiar {{target.nickname}}</h1>
+  <p>Identifique seu perfil AoMStats. Seu perfil também precisa já estar cadastrado no site.</p>
+</section>
+<section class="section">
+  <div class="challenge-target-card">
+    {% if avatar_src(target) %}<img src="{{avatar_src(target)}}" alt="{{target.nickname}}">{% else %}<span class="fighter-fallback">🔥</span>{% endif %}
+    <div><small>ADVERSÁRIO</small><h2>{{target.nickname}}</h2>{% if target.quote %}<p>“{{target.quote}}”</p>{% endif %}</div>
+  </div>
+  {% if current_duel %}
+    <div class="empty"><h3>Arena ocupada</h3><p>Já existe um duelo pendente ou em curso. Aguarde antes de desafiar {{target.nickname}}.</p><a class="btn secondary" href="{{url_for('duels_page')}}">VER DUELO ATUAL</a></div>
+  {% else %}
+  <form method="post" class="panel lookup-player-box challenge-form" data-elo-mode="1v1">
+    <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+    <label class="full"><span>Seu perfil AoMStats</span><div class="inline"><input class="aom-url" name="challenger_aomstats" required placeholder="https://aomstats.io/profile/..."><button type="button" class="btn secondary lookup-aom">BUSCAR PERFIL</button></div></label>
+    <input class="aom-nick" type="hidden"><input class="aom-elo" type="hidden">
+    <div class="lookup-status"></div>
+    <button class="btn primary big">⚔️ DESAFIAR {{target.nickname|upper}}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

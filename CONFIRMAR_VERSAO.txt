@@ -1,0 +1,9 @@
+VERSAO ESPERADA NO RAILWAY:
+CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO
+
+Abra /health e confirme:
+"version": "10.2-mestre-x1"
+"persistent_storage": true
+
+No Deploy Log deve aparecer:
+CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO

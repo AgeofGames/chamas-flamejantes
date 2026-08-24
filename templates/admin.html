@@ -2,8 +2,33 @@
 {% block title %}Admin • {{ site.title }}{% endblock %}
 {% block content %}
 <section class="admin-head">
-  <div><span class="eyebrow">PAINEL ADMINISTRATIVO V6</span><h1>Central de torneios</h1><p>Crie vários torneios, mas só abra ao público quando estiver pronto.</p></div>
+  <div><span class="eyebrow">PAINEL ADMINISTRATIVO V10.2</span><h1>Central Chamas Flamejantes</h1><p>Crie vários torneios, mas só abra ao público quando estiver pronto.</p></div>
   <div class="admin-actions"><form method="post" action="{{ url_for('admin_refresh_all_avatars') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn secondary">🖼 ATUALIZAR PERFIS</button></form><a class="btn secondary" href="{{ url_for('admin_backup') }}">BACKUP SQLITE</a><a class="btn danger-outline" href="{{ url_for('admin_logout') }}">SAIR</a></div>
+</section>
+
+
+<section class="section admin-section">
+  <div class="admin-v10-grid">
+    <a class="admin-v10-card maps" href="{{url_for('admin_maps')}}"><span>🗺️</span><div><b>Gerenciar Mapas</b><small>Upload, preview, categorias e downloads.</small></div></a>
+    <a class="admin-v10-card duels" href="{{url_for('admin_duels')}}"><span>⚔️</span><div><b>Gerenciar Duelos X1</b><small>Aprovar, recusar e definir vencedores.</small></div></a>
+    <a class="admin-v10-card public" target="_blank" href="{{url_for('duels_page')}}"><span>🏆</span><div><b>Ranking X1</b><small>Ver Mestre do X1 e classificação pública.</small></div></a>
+    <a class="admin-v10-card public" target="_blank" href="{{url_for('maps_page')}}"><span>⬇️</span><div><b>Biblioteca Pública</b><small>Ver como os mapas aparecem no site.</small></div></a>
+  </div>
+</section>
+
+<section class="section admin-section">
+  <details class="admin-block" open>
+    <summary><span>🌐</span> Grupos oficiais do site</summary>
+    <form method="post" action="{{url_for('admin_groups_update')}}" class="admin-form">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <div class="admin-grid">
+        <label><span>WhatsApp oficial</span><input type="url" name="whatsapp" value="{{official_links.whatsapp}}" placeholder="https://chat.whatsapp.com/..."></label>
+        <label><span>Discord oficial</span><input type="url" name="discord" value="{{official_links.discord}}" placeholder="https://discord.gg/..."></label>
+        <label><span>Telegram (opcional)</span><input type="url" name="telegram" value="{{official_links.telegram}}" placeholder="https://t.me/..."></label>
+      </div>
+      <button class="btn primary">SALVAR LINKS OFICIAIS</button>
+    </form>
+  </details>
 </section>
 
 <section class="section admin-section"><div class="stat-grid four-stats"><div class="stat"><small>Torneios abertos</small><strong>{{ open_tournaments|selectattr('registration_open')|list|length }}</strong></div><div class="stat"><small>Em andamento</small><strong>{{ running_tournaments|length }}</strong></div><div class="stat"><small>Finalizados</small><strong>{{ history_tournaments|length }}</strong></div><div class="stat"><small>Comunidade</small><strong>{{ community_members|length }}</strong></div></div></section>
@@ -296,17 +321,3 @@
 <section class="section admin-section"><details class="admin-block"><summary><span>🎨</span> Identidade visual do site</summary><form method="post" action="{{ url_for('admin_site_settings') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Nome do site</span><input name="title" value="{{ site.title }}"></label><label><span>Subtítulo</span><input name="subtitle" value="{{ site.subtitle }}"></label><label><span>Cor principal</span><input type="color" name="accent_color" value="{{ site.accent_color }}"></label><label class="full"><span>Frase do topo</span><input name="hero_text" value="{{ site.hero_text }}"></label><label class="full"><span>Descrição</span><textarea name="description">{{ site.description }}</textarea></label><label><span>Fundo</span><select name="background_preset">{% for v,l in [('ember','Fogo'),('obsidian','Obsidiana'),('temple','Templo'),('ocean','Atlântida')] %}<option value="{{v}}" {% if site.background_preset==v %}selected{% endif %}>{{l}}</option>{% endfor %}</select></label><label class="full"><span>Imagem principal</span><input name="hero_image_url" value="{{ site.hero_image_url }}"></label><label class="full"><span>Galeria 1</span><input name="gallery_image_1" value="{{ site.gallery_image_1 }}"></label><label class="full"><span>Galeria 2</span><input name="gallery_image_2" value="{{ site.gallery_image_2 }}"></label><label class="full"><span>Galeria 3</span><input name="gallery_image_3" value="{{ site.gallery_image_3 }}"></label><label class="full"><span>Rodapé</span><input name="footer_text" value="{{ site.footer_text }}"></label></div><button class="btn primary">SALVAR SITE</button></form></details></section>
 <section class="section admin-section"><details class="admin-block"><summary><span>🔐</span> Alterar senha</summary><form method="post" action="{{ url_for('admin_change_password') }}" class="admin-form"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><div class="admin-grid"><label><span>Senha atual</span><input name="old_password" type="password" required></label><label><span>Nova senha</span><input name="new_password" type="password" minlength="8" required></label><label><span>Confirmar</span><input name="confirm_password" type="password" minlength="8" required></label></div><button class="btn secondary">ALTERAR SENHA</button></form></details></section>
 {% endblock %}
-
-<section class="card">
-<h2>🗺️ Cadastrar Mapa</h2>
-<form method="post" enctype="multipart/form-data" action="/admin/mapa/add">
-<input type="hidden" name="_csrf" value="{{csrf_token()}}">
-<input name="name" placeholder="Nome do mapa">
-<input name="creator" placeholder="Criador">
-<select name="category"><option>FFA</option><option>1x1</option><option>2x2</option><option>3x3</option></select>
-<textarea name="description" placeholder="Descrição"></textarea>
-<input type="file" name="map_image">
-<input type="file" name="map_file">
-<button class="btn primary">SALVAR MAPA</button>
-</form>
-</section>

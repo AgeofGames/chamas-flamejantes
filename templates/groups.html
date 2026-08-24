@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Grupos Oficiais • {{site.title}}{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <span class="eyebrow">🌐 COMUNIDADE CHAMAS FLAMEJANTES</span>
+  <h1>Grupos Oficiais</h1>
+  <p>Entre nos canais oficiais e acompanhe torneios, duelos, mapas e eventos da comunidade.</p>
+</section>
+<section class="section">
+  {% if links.whatsapp or links.discord or links.telegram %}
+  <div class="official-link-grid large">
+    {% if links.whatsapp %}<a class="official-link-card whatsapp" target="_blank" rel="noopener" href="{{links.whatsapp}}"><span>💬</span><b>WhatsApp Oficial</b><small>Entrar no grupo ↗</small></a>{% endif %}
+    {% if links.discord %}<a class="official-link-card discord" target="_blank" rel="noopener" href="{{links.discord}}"><span>🎮</span><b>Discord Oficial</b><small>Entrar no servidor ↗</small></a>{% endif %}
+    {% if links.telegram %}<a class="official-link-card telegram" target="_blank" rel="noopener" href="{{links.telegram}}"><span>✈️</span><b>Telegram</b><small>Entrar no grupo ↗</small></a>{% endif %}
+  </div>
+  {% else %}
+  <div class="empty"><h3>Links ainda não cadastrados</h3><p>O administrador ainda não informou os grupos oficiais.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

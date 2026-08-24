@@ -105,5 +105,83 @@
 </section>
 {% endif %}
 
+
+
+{% if map_preview %}
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">🗺️ MAPAS DA COMUNIDADE</span>
+      <h3>Mapas para baixar</h3>
+      <p class="section-copy">Mapas personalizados publicados pela comunidade Chamas Flamejantes.</p>
+    </div>
+    <a class="text-link" href="{{ url_for('maps_page') }}">Ver todos os mapas →</a>
+  </div>
+  <div class="map-grid">
+    {% for map in map_preview %}
+    <article class="map-card">
+      <div class="map-card-preview">
+        {% if map.image_file %}
+          <img src="{{ url_for('map_image',filename=map.image_file) }}" alt="{{map.name}}">
+        {% else %}
+          <div class="map-preview-fallback">🗺️</div>
+        {% endif %}
+        <span class="map-category">{{map.category}}</span>
+      </div>
+      <div class="map-card-body">
+        <h4>{{map.name}}</h4>
+        <p>{{map.description or 'Mapa personalizado de Age of Mythology: Retold.'}}</p>
+        <div class="map-meta"><span>Por <b>{{map.creator or 'Comunidade'}}</b></span><span>⬇ {{map.downloads}}</span></div>
+        <a class="btn primary" href="{{url_for('map_download',map_id=map.id)}}">BAIXAR MAPA</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">⚔️ ARENA X1</span>
+      <h3>Duelos da comunidade</h3>
+      <p class="section-copy">Desafie jogadores cadastrados, acompanhe o duelo em curso e dispute o título Mestre do X1.</p>
+    </div>
+    <a class="text-link" href="{{ url_for('duels_page') }}">Abrir Arena X1 →</a>
+  </div>
+  {% if current_duel %}
+    <div class="duel-home-card">
+      <span class="duel-status {{current_duel.status}}">{{ 'AGUARDANDO ADMIN' if current_duel.status=='pending' else 'DUELO EM CURSO' }}</span>
+      <strong>{{current_duel.player1_name}}</strong><b>VS</b><strong>{{current_duel.player2_name}}</strong>
+    </div>
+  {% else %}
+    <div class="empty"><h3>🔥 Área de duelo disponível</h3><p>Não existe duelo pendente ou em curso. A arena está aberta para um novo desafio.</p><a class="btn primary" href="{{url_for('duels_page')}}">SOLICITAR DUELO</a></div>
+  {% endif %}
+  {% if duel_top %}
+  <div class="duel-mini-ranking">
+    {% for p in duel_top %}
+      <a href="{{url_for('player_profile',player_id=p.id)}}" class="duel-mini-player {% if loop.first %}master{% endif %}">
+        <span>#{{loop.index}}</span>
+        {% if avatar_src(p) %}<img src="{{avatar_src(p)}}" alt="{{p.nickname}}">{% endif %}
+        <b>{{p.nickname}}</b>
+        <small>{{p.wins}}V • {{p.losses}}D • {{p.win_rate}}%</small>
+        {% if loop.first %}<em>⚡ Mestre do X1</em>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{% if official_links and (official_links.whatsapp or official_links.discord or official_links.telegram) %}
+<section class="section official-home-section">
+  <div class="section-head"><div><span class="eyebrow">🌐 COMUNIDADE OFICIAL</span><h3>Entre nos grupos oficiais</h3></div><a class="text-link" href="{{url_for('official_groups_page')}}">Ver comunidade →</a></div>
+  <div class="official-link-grid">
+    {% if official_links.whatsapp %}<a class="official-link-card whatsapp" target="_blank" rel="noopener" href="{{official_links.whatsapp}}"><span>💬</span><b>WhatsApp Oficial</b><small>Entrar no grupo ↗</small></a>{% endif %}
+    {% if official_links.discord %}<a class="official-link-card discord" target="_blank" rel="noopener" href="{{official_links.discord}}"><span>🎮</span><b>Discord Oficial</b><small>Entrar no servidor ↗</small></a>{% endif %}
+    {% if official_links.telegram %}<a class="official-link-card telegram" target="_blank" rel="noopener" href="{{official_links.telegram}}"><span>✈️</span><b>Telegram</b><small>Entrar no grupo ↗</small></a>{% endif %}
+  </div>
+</section>
+{% endif %}
+
 <section class="aom-showcase"><div class="aom-showcase-grid"><figure class="aom-shot aom-shot-main"><img src="{{ site.gallery_image_1 }}" alt="Age of Mythology Retold"><figcaption><small>AGE OF MYTHOLOGY: RETOLD</small><strong>Participe de vários torneios. Cada batalha fica registrada.</strong></figcaption></figure><figure class="aom-shot"><img src="{{ site.gallery_image_2 }}" alt="Batalha"><figcaption><small>CONFRONTOS</small><strong>Chaves, séries MD3 e todos contra todos.</strong></figcaption></figure><figure class="aom-shot"><img src="{{ site.gallery_image_3 }}" alt="Mitologia"><figcaption><small>HISTÓRICO</small><strong>Campeões e confrontos permanecem públicos.</strong></figcaption></figure></div></section>
 {% endblock %}

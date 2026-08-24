@@ -1,23 +1,71 @@
-
 {% extends "base.html" %}
-{% block title %}Admin • Duelos{% endblock %}
+{% block title %}Admin • Duelos X1 • {{site.title}}{% endblock %}
 {% block content %}
-<section class="page-section">
-<h1>⚔️ Aprovação de Duelos X1</h1>
-<p>Controle todos os desafios da comunidade.</p>
-<div class="cards-grid">
-{% for d in duels %}
-<article class="glass-card duel-admin-card">
-<h3>{{d.p1_nick}} ⚔️ {{d.p2_nick}}</h3>
-<p>Status: <b>{{d.status}}</b></p>
-<form method="post" action="{{url_for('admin_duel_status', duel_id=d.id)}}">
-<input type="hidden" name="_csrf" value="{{csrf_token()}}">
-<button class="btn primary" name="status" value="accepted">ACEITAR</button>
-<button class="btn secondary" name="status" value="rejected">RECUSAR</button>
-<button class="btn" name="status" value="running">COLOCAR EM CURSO</button>
-</form>
-</article>
-{% endfor %}
-</div>
+<section class="admin-head">
+  <div><span class="eyebrow">⚔️ ADMIN • DUELOS X1</span><h1>Controle da Arena</h1><p>Aprove desafios, acompanhe o duelo em curso e registre o vencedor.</p></div>
+  <div class="admin-actions"><a class="btn secondary" href="{{url_for('admin')}}">← PAINEL</a><a class="btn ghost" target="_blank" href="{{url_for('duels_page')}}">VER ARENA ↗</a></div>
+</section>
+
+<section class="section admin-section">
+  {% set pending=duels|selectattr('status','equalto','pending')|list %}
+  {% set active=duels|selectattr('status','equalto','active')|list %}
+  <div class="stat-grid four-stats">
+    <div class="stat"><small>Aguardando</small><strong>{{pending|length}}</strong></div>
+    <div class="stat"><small>Em curso</small><strong>{{active|length}}</strong></div>
+    <div class="stat"><small>Finalizados</small><strong>{{duels|selectattr('status','equalto','finished')|list|length}}</strong></div>
+    <div class="stat"><small>Ranking</small><strong>{{ranking|length}}</strong></div>
+  </div>
+</section>
+
+{% if pending %}
+<section class="section admin-section">
+  <div class="section-head"><div><span class="eyebrow">⏳ PRECISA DE DECISÃO</span><h3>Aprovação de duelos</h3></div></div>
+  {% for d in pending %}
+  <article class="admin-duel-card pending">
+    <div class="admin-duel-versus"><strong>{{d.player1_name}}</strong><b>VS</b><strong>{{d.player2_name}}</strong></div>
+    <div class="admin-duel-actions">
+      <form method="post" action="{{url_for('admin_duel_accept',duel_id=d.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary">✅ ACEITAR DUELO</button></form>
+      <form method="post" action="{{url_for('admin_duel_reject',duel_id=d.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">RECUSAR</button></form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if active %}
+<section class="section admin-section">
+  <div class="section-head"><div><span class="eyebrow">🔥 DUELO EM CURSO</span><h3>Escolha o vencedor quando terminar</h3></div></div>
+  {% for d in active %}
+  <article class="admin-duel-card active">
+    <div class="admin-duel-versus"><strong>{{d.player1_name}}</strong><b>VS</b><strong>{{d.player2_name}}</strong></div>
+    <form method="post" action="{{url_for('admin_duel_winner',duel_id=d.id)}}" class="winner-choice-form">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <label><input type="radio" name="winner_id" value="{{d.player1_id}}" required> 🏆 {{d.player1_name}}</label>
+      <label><input type="radio" name="winner_id" value="{{d.player2_id}}" required> 🏆 {{d.player2_name}}</label>
+      <input name="admin_notes" placeholder="Observação opcional">
+      <button class="btn primary big">FINALIZAR E REGISTRAR VENCEDOR</button>
+    </form>
+    <form method="post" action="{{url_for('admin_duel_reject',duel_id=d.id)}}" onsubmit="return confirm('Cancelar este duelo em curso?')"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger-outline">CANCELAR DUELO</button></form>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="section admin-section">
+  <div class="section-head"><div><span class="eyebrow">🏆 RANKING</span><h3>Classificação X1 acumulada</h3></div></div>
+  {% if ranking %}
+  <div class="community-table-wrap"><table class="players-table"><thead><tr><th>#</th><th>Jogador</th><th>V</th><th>D</th><th>Win Rate</th><th>Sequência</th></tr></thead><tbody>
+  {% for p in ranking %}<tr><td>{% if loop.first %}👑{% else %}#{{loop.index}}{% endif %}</td><td><b>{{p.nickname}}</b>{% if loop.first %}<small class="table-sub">Mestre do X1</small>{% endif %}</td><td>{{p.wins}}</td><td>{{p.losses}}</td><td>{{p.win_rate}}%</td><td>🔥 {{p.streak}}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty">Ainda não existem duelos finalizados.</div>{% endif %}
+</section>
+
+<section class="section admin-section">
+  <div class="section-head"><div><span class="eyebrow">📜 HISTÓRICO ADMIN</span><h3>Todos os duelos</h3></div></div>
+  <div class="duel-history-list">
+  {% for d in duels %}
+    <article class="duel-history-row"><span>#{{d.id}}</span><b>{{d.player1_name}}</b><em>VS</em><b>{{d.player2_name}}</b><strong>{{d.status|upper}}{% if d.winner_name %} • 🏆 {{d.winner_name}}{% endif %}</strong><small>{{d.finished_at or d.accepted_at or d.requested_at}}</small></article>
+  {% else %}<div class="empty">Nenhum duelo cadastrado.</div>{% endfor %}
+  </div>
 </section>
 {% endblock %}

@@ -6,6 +6,7 @@ from app import (
     RAILWAY_VOLUME_PATH,
     DB_PATH,
     UPLOAD_DIR,
+    MAPS_DIR,
     prepare_persistent_storage,
     init_db,
     migrate_v6_db,
@@ -29,9 +30,10 @@ ensure_default_admin()
 port = os.environ.get("PORT", "8080")
 
 print("=" * 72, flush=True)
-print("CHAMAS FLAMEJANTES V9 - RAILWAY", flush=True)
+print("CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO", flush=True)
 print(f"Banco: {DB_PATH}", flush=True)
 print(f"Uploads: {UPLOAD_DIR}", flush=True)
+print(f"Mapas: {MAPS_DIR}", flush=True)
 print(f"Volume persistente: {'SIM' if RAILWAY_VOLUME_PATH else 'NAO (modo local)'}", flush=True)
 print("=" * 72, flush=True)
 

@@ -1,20 +1,40 @@
 {% extends "base.html" %}
+{% block title %}Mapas • {{site.title}}{% endblock %}
 {% block content %}
-<section class="hero-panel">
-<h1>🗺️ Mapas</h1>
-<p>Biblioteca de mapas da comunidade Chamas Flamejantes.</p>
+<section class="page-hero compact maps-hero">
+  <span class="eyebrow">🗺️ BIBLIOTECA DE MAPAS</span>
+  <h1>Mapas da Comunidade</h1>
+  <p>Baixe mapas personalizados criados para Age of Mythology: Retold.</p>
 </section>
-<div class="cards-grid">
-{% for m in maps %}
-<article class="card map-card">
-{% if m.image_file %}<img src="/uploads/{{m.image_file}}" class="map-preview">{% endif %}
-<h2>{{m.name}}</h2>
-<p>{{m.description}}</p>
-<div>Criador: <b>{{m.creator}}</b></div>
-<div>Categoria: <b>{{m.category}}</b></div>
-<div>⬇ Downloads: {{m.downloads}}</div>
-<a class="btn primary" href="{{url_for('download_map',map_id=m.id)}}">BAIXAR MAPA</a>
-</article>
-{% else %}<p>Nenhum mapa cadastrado.</p>{% endfor %}
-</div>
+
+<section class="section">
+  {% if maps %}
+  <div class="map-grid">
+    {% for map in maps %}
+    <article class="map-card">
+      <div class="map-card-preview">
+        {% if map.image_file %}
+          <img src="{{url_for('map_image',filename=map.image_file)}}" alt="Preview {{map.name}}">
+        {% else %}
+          <div class="map-preview-fallback"><span>🗺️</span><small>SEM PREVIEW</small></div>
+        {% endif %}
+        <span class="map-category">{{map.category}}</span>
+      </div>
+      <div class="map-card-body">
+        <span class="eyebrow">MAPA PERSONALIZADO</span>
+        <h2>{{map.name}}</h2>
+        <p>{{map.description or 'Mapa personalizado de Age of Mythology: Retold.'}}</p>
+        <div class="map-meta">
+          <span>✍️ Criador: <b>{{map.creator or 'Comunidade'}}</b></span>
+          <span>⬇️ <b>{{map.downloads}}</b> downloads</span>
+        </div>
+        <a class="btn primary big" href="{{url_for('map_download',map_id=map.id)}}">⬇ BAIXAR MAPA</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="empty"><h3>Nenhum mapa publicado ainda</h3><p>Os mapas enviados pelo administrador aparecerão aqui.</p></div>
+  {% endif %}
+</section>
 {% endblock %}

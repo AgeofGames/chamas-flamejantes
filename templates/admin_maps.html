@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Admin • Mapas • {{site.title}}{% endblock %}
+{% block content %}
+<section class="admin-head">
+  <div><span class="eyebrow">🗺️ ADMIN • MAPAS</span><h1>Biblioteca de Mapas</h1><p>Faça upload do mapa e da imagem de preview. Os arquivos ficam no Volume persistente do Railway.</p></div>
+  <div class="admin-actions"><a class="btn secondary" href="{{url_for('admin')}}">← PAINEL</a><a class="btn ghost" target="_blank" href="{{url_for('maps_page')}}">VER MAPAS ↗</a></div>
+</section>
+
+<section class="section admin-section">
+  <div class="admin-map-create">
+    <div class="admin-map-create-copy">
+      <span class="eyebrow">NOVO MAPA</span>
+      <h2>Publicar um mapa</h2>
+      <p>Adicione uma imagem bonita para o card e o arquivo que os jogadores vão baixar.</p>
+    </div>
+    <form method="post" enctype="multipart/form-data" action="{{url_for('admin_map_add')}}" class="admin-form map-upload-form">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <div class="admin-grid">
+        <label><span>Nome do mapa *</span><input name="name" required placeholder="Ex.: Mundo dos Titãs"></label>
+        <label><span>Criador</span><input name="creator" placeholder="Ex.: Makise_Kurisu"></label>
+        <label><span>Categoria *</span><select name="category">{% for c in categories %}<option>{{c}}</option>{% endfor %}</select></label>
+        <label><span>Imagem de preview</span><input type="file" name="image_file" accept="image/png,image/jpeg,image/webp"></label>
+        <label class="full map-file-drop"><span>Arquivo do mapa *</span><input type="file" name="map_file" required><small>ZIP, RAR, 7Z, XS, XML, RMS, SCENARIO, SCX, JSON, TXT, MOD, CFG ou DAT.</small></label>
+        <label class="full"><span>Descrição</span><textarea name="description" placeholder="Explique como é o mapa e para qual modo ele foi criado."></textarea></label>
+      </div>
+      <button class="btn primary big">🗺️ PUBLICAR MAPA</button>
+    </form>
+  </div>
+</section>
+
+<section class="section admin-section">
+  <div class="section-head"><div><span class="eyebrow">MAPAS CADASTRADOS</span><h3>Gerenciar biblioteca</h3></div></div>
+  {% if maps %}
+  <div class="admin-map-grid">
+    {% for map in maps %}
+    <article class="admin-map-card">
+      {% if map.image_file %}<img src="{{url_for('map_image',filename=map.image_file)}}" alt="{{map.name}}">{% else %}<div class="map-preview-fallback">🗺️</div>{% endif %}
+      <form method="post" enctype="multipart/form-data" action="{{url_for('admin_map_edit',map_id=map.id)}}" class="admin-form">
+        <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+        <label><span>Nome</span><input name="name" value="{{map.name}}"></label>
+        <label><span>Criador</span><input name="creator" value="{{map.creator}}"></label>
+        <label><span>Categoria</span><select name="category">{% for c in categories %}<option {% if c==map.category %}selected{% endif %}>{{c}}</option>{% endfor %}</select></label>
+        <label><span>Nova imagem</span><input type="file" name="image_file" accept="image/png,image/jpeg,image/webp"></label>
+        <label class="full"><span>Descrição</span><textarea name="description">{{map.description}}</textarea></label>
+        <label class="check"><input type="checkbox" name="is_active" {% if map.is_active %}checked{% endif %}><span>Publicado</span></label>
+        <small>⬇ {{map.downloads}} downloads • Arquivo: {{map.original_filename}}</small>
+        <button class="btn secondary">SALVAR</button>
+      </form>
+      <form method="post" action="{{url_for('admin_map_delete',map_id=map.id)}}" onsubmit="return confirm('Excluir este mapa e os arquivos?')">
+        <input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">EXCLUIR MAPA</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty">Nenhum mapa cadastrado.</div>{% endif %}
+</section>
+{% endblock %}

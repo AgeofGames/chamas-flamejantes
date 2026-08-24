@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V9 — RAILWAY + SQLITE
+# 🔥 CHAMAS FLAMEJANTES V10.2 — RAILWAY + SQLITE
 
 Esta é a versão da V7.5 adaptada para ficar online usando:
 
@@ -26,7 +26,7 @@ No Railway, depois de anexar o Volume:
 - Fotos: `/app/persistent/uploads`
 
 O Railway informa automaticamente o caminho do Volume à aplicação.
-A V9 detecta isso e usa o Volume sem você editar o código.
+A V10.2 detecta isso e usa o Volume sem você editar o código.
 
 IMPORTANTE:
 Se a aplicação perceber que está no Railway sem Volume, ela se recusa a iniciar.
@@ -59,7 +59,7 @@ A senha padrão inicial continua funcionando, mas troque depois que o site ficar
 6. Selecione o repositório `chamas-flamejantes`.
 
 É normal o primeiro deploy falhar se você ainda não adicionou o Volume.
-A V9 bloqueia o modo Railway sem armazenamento persistente.
+A V10.2 bloqueia o modo Railway sem armazenamento persistente.
 
 ---
 
@@ -145,7 +145,7 @@ No Railway corretamente configurado, a aplicação nem inicia se o Volume estive
 
 # LEVAR SEU SQLITE ANTIGO PARA O RAILWAY
 
-A V9 vem com o SQLite presente no pacote como banco inicial.
+A V10.2 vem com o SQLite presente no pacote como banco inicial.
 
 Se você quiser substituir pelo banco que está usando no seu computador:
 
@@ -206,7 +206,7 @@ Portanto, trocar a versão do código não apaga as fotos.
 
 SQLite é excelente para este projeto, mas é um banco de arquivo.
 
-A V9 roda o Gunicorn com:
+A V10.2 roda o Gunicorn com:
 
 - 1 worker
 - 8 threads
@@ -223,7 +223,7 @@ Para um site comunitário/torneios, é uma configuração adequada.
 
 ---
 
-# ARQUIVOS NOVOS DA V9
+# ARQUIVOS NOVOS DA V10.2
 
 `railway.json`
 Configuração oficial do deploy no Railway.

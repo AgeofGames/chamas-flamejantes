@@ -1,19 +1,124 @@
 {% extends "base.html" %}
+{% block title %}Duelos X1 • {{site.title}}{% endblock %}
 {% block content %}
-<section class="hero-panel"><h1>⚔️ Ranking X1</h1><p>Quem domina os duelos?</p></section>
-<div class="cards-grid">
-{% for r in ranking %}
-<article class="card neon-winner">
-{% if r.avatar_file %}<img class="avatar-img" src="/uploads/{{r.avatar_file}}">{% endif %}
-<h2>{% if loop.first %}👑 Mestre do X1{% endif %} {{r.nickname}}</h2>
-<p>🔥 Vitórias: {{r.wins}}</p>
-<p>💀 Derrotas: {{r.losses}}</p>
-<p>📈 Win Rate: {{r.winrate}}%</p>
-</article>
-{% endfor %}
-</div>
-<h2>Histórico de Duelos</h2>
-{% for d in duels %}
-<div class="card">{{d.p1_name}} VS {{d.p2_name}} — {{d.status}}</div>
-{% endfor %}
+<section class="page-hero compact duel-page-hero">
+  <span class="eyebrow">⚔️ ARENA OFICIAL</span>
+  <h1>Duelos X1</h1>
+  <p>Somente jogadores que já possuem perfil AoMStats cadastrado no Chamas Flamejantes podem participar.</p>
+</section>
+
+<section class="section">
+  {% if current_duel %}
+    <div class="current-duel-card {% if current_duel.status=='active' %}active{% endif %}">
+      <span class="duel-status {{current_duel.status}}">{{'⏳ AGUARDANDO APROVAÇÃO DO ADMIN' if current_duel.status=='pending' else '🔥 DUELO EM CURSO'}}</span>
+      <div class="duel-vs-grid">
+        <div class="duel-fighter">
+          {% set av1={'avatar_url':current_duel.player1_avatar_url,'avatar_file':current_duel.player1_avatar_file} %}
+          {% if avatar_src(av1) %}<img src="{{avatar_src(av1)}}">{% else %}<span class="fighter-fallback">🔥</span>{% endif %}
+          <h2>{{current_duel.player1_name}}</h2>
+          {% if current_duel.player1_quote %}<small>“{{current_duel.player1_quote}}”</small>{% endif %}
+        </div>
+        <div class="duel-vs">VS</div>
+        <div class="duel-fighter">
+          {% set av2={'avatar_url':current_duel.player2_avatar_url,'avatar_file':current_duel.player2_avatar_file} %}
+          {% if avatar_src(av2) %}<img src="{{avatar_src(av2)}}">{% else %}<span class="fighter-fallback">🔥</span>{% endif %}
+          <h2>{{current_duel.player2_name}}</h2>
+          {% if current_duel.player2_quote %}<small>“{{current_duel.player2_quote}}”</small>{% endif %}
+        </div>
+      </div>
+      <p>{% if current_duel.status=='pending' %}O administrador precisa aceitar este duelo antes da batalha começar.{% else %}O duelo foi aprovado. O administrador registrará o vencedor quando a partida terminar.{% endif %}</p>
+    </div>
+  {% else %}
+    <div class="duel-available">
+      <span class="eyebrow">🔥 ARENA LIVRE</span>
+      <h2>Área de duelo disponível</h2>
+      <p>No momento não existe nenhum desafio pendente ou duelo em curso. Apenas um duelo pode ocupar a arena por vez.</p>
+
+      <form method="post" action="{{url_for('request_duel')}}" class="duel-request-form" data-elo-mode="1v1">
+        <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+        <div class="duel-request-two">
+          <div class="lookup-player-box">
+            <span class="eyebrow">DESAFIANTE</span>
+            <label><span>Seu perfil AoMStats</span><div class="inline"><input class="aom-url" name="challenger_aomstats" required placeholder="https://aomstats.io/profile/..."><button type="button" class="btn secondary lookup-aom">BUSCAR</button></div></label>
+            <input class="aom-nick" type="hidden"><input class="aom-elo" type="hidden">
+            <div class="lookup-status"></div>
+          </div>
+          <div class="lookup-player-box">
+            <span class="eyebrow">ADVERSÁRIO</span>
+            <label><span>Perfil AoMStats do adversário</span><div class="inline"><input class="aom-url" name="opponent_aomstats" required placeholder="https://aomstats.io/profile/..."><button type="button" class="btn secondary lookup-aom">BUSCAR</button></div></label>
+            <input class="aom-nick" type="hidden"><input class="aom-elo" type="hidden">
+            <div class="lookup-status"></div>
+          </div>
+        </div>
+        <button class="btn primary big">⚔️ SOLICITAR DUELO X1</button>
+      </form>
+    </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div><span class="eyebrow">🏆 CLASSIFICAÇÃO X1</span><h3>Ranking dos duelistas</h3><p class="section-copy">Vitórias e derrotas são acumuladas automaticamente a cada duelo finalizado.</p></div>
+  </div>
+  {% if ranking %}
+  <div class="duel-ranking-grid">
+    {% for p in ranking %}
+    <article class="duel-rank-card {% if loop.first %}duel-master-card{% endif %}">
+      <a class="duel-player-link" href="{{url_for('player_profile',player_id=p.id)}}">
+        <div class="duel-rank-position">{% if loop.first %}👑{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% else %}#{{loop.index}}{% endif %}</div>
+        {% if avatar_src(p) %}<img class="duel-rank-avatar" src="{{avatar_src(p)}}" alt="{{p.nickname}}">{% else %}<span class="duel-rank-avatar fallback">🔥</span>{% endif %}
+        {% if loop.first %}<span class="master-x1-title">⚡ MESTRE DO X1</span>{% endif %}
+        <h2>{{p.nickname}}</h2>
+      </a>
+      <div class="duel-rank-stats">
+        <div><b>{{p.wins}}</b><small>Vitórias</small></div>
+        <div><b>{{p.losses}}</b><small>Derrotas</small></div>
+        <div><b>{{p.win_rate}}%</b><small>Win Rate</small></div>
+        <div><b>🔥 {{p.streak}}</b><small>Sequência</small></div>
+      </div>
+      <a class="btn secondary" href="{{url_for('challenge_player',target_player_id=p.id)}}">⚔️ DESAFIAR JOGADOR</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="empty"><h3>Ranking aguardando o primeiro duelo</h3><p>Quando o administrador registrar o primeiro vencedor, a classificação começa automaticamente.</p></div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">👥 JOGADORES CADASTRADOS</span><h3>Escolha um adversário</h3></div></div>
+  {% if players %}
+  <div class="duel-player-grid">
+    {% for p in players %}
+    <article class="duel-player-card">
+      <a href="{{url_for('player_profile',player_id=p.id)}}">
+        {% if avatar_src(p) %}<img src="{{avatar_src(p)}}" alt="{{p.nickname}}">{% else %}<span class="fighter-fallback">🔥</span>{% endif %}
+        <b>{{p.nickname}}</b>
+      </a>
+      <div class="duel-player-actions"><a class="btn ghost" href="{{url_for('player_profile',player_id=p.id)}}">PERFIL</a><a class="btn secondary" href="{{url_for('challenge_player',target_player_id=p.id)}}">DESAFIAR</a></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">📜 ARQUIVO DA ARENA</span><h3>Histórico de duelos</h3></div></div>
+  {% if history %}
+  <div class="duel-history-list">
+    {% for d in history %}
+    <article class="duel-history-row">
+      <span>#{{d.id}}</span>
+      <b>{{d.player1_name}}</b>
+      <em>VS</em>
+      <b>{{d.player2_name}}</b>
+      <strong>🏆 {{d.winner_name}}</strong>
+      <small>{{d.finished_at or d.requested_at}}</small>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">Nenhum duelo finalizado ainda.</div>
+  {% endif %}
+</section>
 {% endblock %}
