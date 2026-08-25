@@ -3438,10 +3438,77 @@ def admin_backup():
 
 
 @app.get("/health")
+
+def migrate_v10_2_1_db():
+    """
+    Corrige bancos SQLite persistentes criados antes da V10.2.
+    Não remove dados. Apenas adiciona colunas novas da Arena X1.
+    """
+    db = sqlite3.connect(DB_PATH, timeout=30)
+    db.row_factory = sqlite3.Row
+
+    # Tabela duels já existia em versões anteriores.
+    if _has_table(db, "duels"):
+        duel_cols = {
+            "status": "TEXT NOT NULL DEFAULT 'pending'",
+            "requested_at": "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "accepted_at": "TEXT DEFAULT ''",
+            "finished_at": "TEXT DEFAULT ''",
+            "admin_notes": "TEXT NOT NULL DEFAULT ''",
+        }
+
+        for col, definition in duel_cols.items():
+            if not _has_column(db, "duels", col):
+                db.execute(
+                    f"ALTER TABLE duels ADD COLUMN {col} {definition}"
+                )
+
+        db.execute("""
+            CREATE INDEX IF NOT EXISTS idx_duels_status
+            ON duels(status, requested_at DESC)
+        """)
+
+        db.execute("""
+            CREATE INDEX IF NOT EXISTS idx_duels_players
+            ON duels(player1_id, player2_id, status)
+        """)
+
+    # Garante as tabelas novas sem quebrar banco antigo.
+    db.executescript("""
+    CREATE TABLE IF NOT EXISTS custom_maps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        creator TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT 'Outro',
+        description TEXT NOT NULL DEFAULT '',
+        image_file TEXT NOT NULL DEFAULT '',
+        map_file TEXT NOT NULL DEFAULT '',
+        original_filename TEXT NOT NULL DEFAULT '',
+        downloads INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS community_links (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        whatsapp TEXT NOT NULL DEFAULT '',
+        discord TEXT NOT NULL DEFAULT '',
+        telegram TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    INSERT OR IGNORE INTO community_links(id) VALUES (1);
+    """)
+
+    db.commit()
+    db.close()
+
+
 def health():
     return {
         "ok": True,
-        "version": "10.2-mestre-x1",
+        "version": "10.2.1-migration-fix",
         "database": str(DB_PATH.name),
         "persistent_storage": storage_is_persistent(),
         "railway": RUNNING_ON_RAILWAY,
@@ -3457,6 +3524,7 @@ if __name__ == "__main__":
     prepare_persistent_storage()
     init_db()
     migrate_v6_db()
+    migrate_v10_2_1_db()
     ensure_default_admin()
     print("\n" + "=" * 68)
     print(" 🔥 CHAMAS FLAMEJANTES V10.2 — MESTRE DO X1 + MAPAS PRO")

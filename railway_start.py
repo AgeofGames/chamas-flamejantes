@@ -30,7 +30,7 @@ ensure_default_admin()
 port = os.environ.get("PORT", "8080")
 
 print("=" * 72, flush=True)
-print("CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO", flush=True)
+print("CHAMAS FLAMEJANTES V10.2.1 - MIGRATION FIX", flush=True)
 print(f"Banco: {DB_PATH}", flush=True)
 print(f"Uploads: {UPLOAD_DIR}", flush=True)
 print(f"Mapas: {MAPS_DIR}", flush=True)

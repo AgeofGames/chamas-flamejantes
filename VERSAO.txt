@@ -1,4 +1,6 @@
-CHAMAS FLAMEJANTES V10.2 - MESTRE DO X1 + MAPAS PRO
-Base real: V9 Railway + SQLite persistente.
-Novidades: Mapas, grupos oficiais, duelos X1, ranking, streak, Mestre do X1 e perfis públicos.
-Volume Railway: /app/persistent
+CHAMAS FLAMEJANTES V10.2.1 - MIGRATION FIX
+
+Correção:
+- Compatível com SQLite persistente da V9/V10.
+- Migra tabela duels antiga sem apagar dados.
+- Adiciona colunas faltantes automaticamente.
